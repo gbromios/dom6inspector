@@ -1,5 +1,5 @@
 {
-  "name": "dom6inspector-next-tools",
+  "name": "dom6inspector-next-lib",
   "type": "module",
   "scripts": {
     "data:units": "node data-scripts/unit.js"
@@ -11,5 +11,10 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.19"
+  },
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    }
   }
 }

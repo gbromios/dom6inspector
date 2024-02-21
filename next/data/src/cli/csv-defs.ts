@@ -1,5 +1,5 @@
 import type { ParseSchemaOptions } from './parse-csv'
-export const csvDefs: Record<string, ParseSchemaOptions> = {
+export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
   '../../gamedata/BaseU.csv': {
     name: 'Unit',
     ignoreFields: new Set(['end']),
@@ -178,5 +178,3 @@ export const csvDefs: Record<string, ParseSchemaOptions> = {
     ignoreFields: new Set(['end']),
   },
 };
-
-

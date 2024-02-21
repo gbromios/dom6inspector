@@ -1,20 +1,41 @@
 <script setup lang="ts">
-  import { ref, reactive } from 'vue';
-  import LoadingApp from './LoadingApp.vue';
-  // need db...
-  const loading = reactive({
-    state: 1,
-    message: 'POOPOOPEEPEE',
-    progress: null,
-    max: null,
-  });
+  import { RouterView } from 'vue-router';
+  import { useStore } from './store';
+  const store = useStore();
 
-  const db = createStore();
+  store.initDB().then(() => {
+    console.log('store is ready');
+  })
+
 
 </script>
 
 <template>
-  <LoadingApp v-if="loading.state > 0" v-bind="loading"/>
+  <div v-if="store.fatalError" class="bootstrap fatal-error">
+    <strong>{{ store.fatalError }}</strong>
+  </div>
+  <LoadingApp v-else-if="store.loading.state !== 0" v-bind="store.loading"/>
+  <main v-else class="main-view">
+    <div class="scroll-wrapper">
+      <RouterView />
+    </div>
+  </main>
 </template>
 
-
+<style lang="less">
+  .main-view {
+    overflow-y: hidden;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .scroll-wrapper {
+    flex: 0 0 100%;
+    min-height: 0;
+    overflow-y: overlay;
+  }
+  .fatal-error {
+    color: var(--hl-color);
+  }
+</style>

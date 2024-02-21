@@ -1,19 +1,18 @@
 import { Schema } from './schema';
-import type { Field, Column } from './column';
+import type { Column } from './column';
 import type { Row } from './table';
 
 
 import { readFile } from 'node:fs/promises';
 import { Table } from './table';
-import { COLUMN, rangeToNumericType, cmpFields, isNumericColumn, StringColumn, BoolColumn, NumericColumn, BigColumn, fromData } from './column';
+import { COLUMN, cmpFields, fromText } from './column';
 
 
 
 let _nextNameId = 1;
-const textDecoder = new TextDecoder();
 export async function readCSV (
   path: string,
-  options: ParseSchemaOptions
+  options?: Partial<ParseSchemaOptions>,
 ): Promise<Table> {
   let raw: string;
   try {
@@ -32,24 +31,36 @@ export async function readCSV (
 
 export type ParseSchemaOptions = {
   name?: string,
-  ignoreFields?: Set<string>;
-  overrides?: Record<string, (v: any) => any>;
+  ignoreFields: Set<string>;
+  overrides: Record<string, (v: any) => any>;
+  separator: string;
 }
 
-export function csvToTable(raw: string, options: ParseSchemaOptions): Table {
+const DEFAULT_OPTIONS: ParseSchemaOptions = {
+  ignoreFields: new Set(),
+  overrides: {},
+  separator: ',',
+}
+
+export function csvToTable(
+  raw: string,
+  options?: Partial<ParseSchemaOptions>
+): Table {
+  
+  const _opts = { ...DEFAULT_OPTIONS, ...options };
+  const schemaName = _opts.name ?? `Schema_${_nextNameId++}`;
   if (raw.indexOf('\0') !== -1) throw new Error('uh oh')
 
   const [rawFields, ...rawData] = raw
     .split('\n')
     .filter(line => line !== '')
-    .map(line => line.split('\t'));
-  const schemaName = options.name ?? `Schema_${_nextNameId++}`;
+    .map(line => line.split(_opts.separator));
 
   const hCount = new Map<string, number>;
   for (const [i, f] of rawFields.entries()) {
     if (!f) throw new Error(`${schemaName} @ ${i} is an empty field name`);
     if (hCount.has(f)) {
-      console.warn(`${schemaName} @ ${i} "${f} is a duplicate field name`);
+      console.warn(`${schemaName} @ ${i} "${f}" is a duplicate field name`);
       const n = hCount.get(f)!
       rawFields[i] = `${f}.${n}`;
     } else {
@@ -57,15 +68,14 @@ export function csvToTable(raw: string, options: ParseSchemaOptions): Table {
     }
   }
 
-
   let index = 0;
   let flagsUsed = 0;
   let rawColumns: [col: Column, rawIndex: number][] = [];
 
   for (const [rawIndex, name] of rawFields.entries()) {
-    if (options?.ignoreFields?.has(name)) continue;
+    if (_opts.ignoreFields?.has(name)) continue;
     try {
-      const c = fromData(name, rawIndex, index, flagsUsed, rawData, options?.overrides?.[name]);
+      const c = fromText(name, rawIndex, index, flagsUsed, rawData, _opts.overrides[name]);
       if (c !== null) {
         index++;
         if (c.type === COLUMN.BOOL) flagsUsed++;
@@ -85,8 +95,6 @@ export function csvToTable(raw: string, options: ParseSchemaOptions): Table {
     .map((_, __rowId) => ({ __rowId }))
     ;
 
-  //console.log(data);
-
   const columns: Column[] = [];
   const fields: string[] = [];
   rawColumns.sort((a, b) => cmpFields(a[0], b[0]));
@@ -95,7 +103,7 @@ export function csvToTable(raw: string, options: ParseSchemaOptions): Table {
     columns.push(col);
     fields.push(col.name);
     for (const r of data)
-      data[r.__rowId][col.name] = col.parse(rawData[r.__rowId][rawIndex])
+      data[r.__rowId][col.name] = col.fromText(rawData[r.__rowId][rawIndex])
   }
 
   return new Table(

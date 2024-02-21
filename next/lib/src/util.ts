@@ -1,8 +1,8 @@
 // just a bunch of output formatting shit
 export function tableDeco(name: string, width = 80, style = 9) {
   const { TL, BL, TR, BR, HR } = getBoxChars(style)
-  const nameWidth = name.length - 2;
-  const hTailWidth = width - (nameWidth + 5 - 1)
+  const nameWidth = name.length + 2; // with spaces
+  const hTailWidth = width - (nameWidth + 6)
   return [
     `${TL}${HR.repeat(4)} ${name} ${HR.repeat(hTailWidth)}${TR}`,
     `${BL}${HR.repeat(width - 2)}${BR}`

@@ -11,13 +11,15 @@ LIB_MODE=false
 BRO_MODE=false
 DO_TYPES=false
 DO_CLEAN=false
-FILES=""
-ENTRY=()
+declare -a ARGS
+declare -a FILES
+declare -a ENTRY
+
 
 # TODO - watching solutions other than fswatch (like UHHHHHH)
 # TODO - output files wherewhere
 function usage {
-  echo "Usage: $(basename ${0}) [-cndblt] [...ENTRY_POINT]" 1>&2
+  echo "Usage: $(basename ${0}) [-cndblt] [...ENTRY_POINT|ESBUILD_OPTIONS]" 1>&2
   echo "	-c ··· cleans existing files in output dir (dist/)" 1>&2
   echo "	-n ··· tell typescript \"STFU, I'M BUSY RIGHT NOW\"" 1>&2
   echo "	-p ··· don't allow a failed typecheck to stop the build " 1>&2
@@ -91,12 +93,12 @@ EOF
   local BUILD_ARGS=(
     ${ENTRY[@]}
     --bundle
-    --outdir="dist"
     --format="esm"
     --target="esnext"
     --platform="node"
     --tsconfig="${TSCONFIG}"
     --sourcemap="inline"
+    ${ARGS[@]}
   )
   echo "building (node)" ${BUILD_ARGS[@]}
   pnpm esbuild ${BUILD_ARGS[@]}
@@ -122,12 +124,12 @@ EOF
   local BUILD_ARGS=(
     ${ENTRY[@]}
     --bundle
-    --outdir="dist"
     --format="esm"
     --target="esnext"
     --platform="browser"
     --tsconfig="${TSCONFIG}"
     --sourcemap="inline"
+    ${ARGS[@]}
   )
   echo "building (browser)" ${BUILD_ARGS[@]}
   pnpm esbuild ${BUILD_ARGS[@]}
@@ -190,16 +192,34 @@ done
 
 shift "$(($OPTIND -1))"
 
-# Default entry point (no args)
-if [[ $# -eq 0 ]]; then
-  set -- src/index.ts
-fi
 
 # make a json list out of arguments ok
-# TODO - probably allow actual args? idk, maybe a subset
-ENTRY=$@
+for ARG in ${@}; do
+  # TODO - maybe entry file just can't be optional
+#  echo "ARG=${ARG}"
+  if $(echo ${ARG} | grep -q '^src/') && $(echo ${ARG} | grep -q '\.ts$'); then
+    ENTRY[${#ENTRY[@]}]="${ARG}"
+  else
+    ARGS[${#ARGS[@]}]=${ARG}
+  fi
+done
+
+# Default entry point (no args)
+if [[ ${#ENTRY[@]} -eq 0 ]]; then
+  ENTRY+="src/index.ts"
+fi
+
+if ! ( [[ "${ARGS[*]}" =~ "--outfile" ]] || [[ "${ARGS[*]}" =~ "--outdir" ]] ); then
+  echo "use default outdir 'dist'"
+  ARGS[${#ARGS[@]}]="--outdir=dist/"
+fi
+
 FILES=$(printf '"%s",' "${ENTRY[@]}"| sed -e 's|,$||')
 
+#echo "ARGS ="
+#for a in "${ARGS[@]}"; do echo "'$a'"; done;
+#echo "FILES ="
+#for a in "${FILES[@]}"; do echo "'$a'"; done;
 # ensure there is some build? (change for a different default)
 if ! ($BRO_MODE || $LIB_MODE || $DO_TYPES); then
   LIB_MODE=true

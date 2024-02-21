@@ -5,9 +5,25 @@
     <title>Dominions 6 Data Inspector (Next UI)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
-    :root { --fg-color: white; --bg-color: #111; }
+    :root {
+      --fg-color: #FFF;
+      --bg-color: #111;
+      --ln-color: #39E;
+      --hl-color: #D6362A;
+      --di-color: #AAA;
+      --se-color: #666;
+      color-scheme: dark;
+    }
     @media (prefers-color-scheme: light) {
-      :root { --fg-color: black; --bg-color: #eee; }
+      :root {
+        --fg-color: #000;
+        --bg-color: #EEE;
+        --ln-color: #126;
+        --hl-color: #762608;
+        /* --hl-color: #B21; */
+        --di-color: #444;
+        color-scheme: light;
+      }
     }
     body {
       background-color: var(--bg-color);
@@ -15,7 +31,6 @@
       margin: 0;
       font-family: system-ui;
       position: fixed;
-      font-size: 120%;
       top: 0;
       left: 0;
       height: 100vh;

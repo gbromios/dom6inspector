@@ -1,7 +1,7 @@
 import { Schema } from './schema';
 import { tableDeco } from './util';
 export type RowData = string[];
-export type Row = Record<string, number|Uint8Array> & { __rowId: number };
+export type Row = Record<string, boolean|number|string|bigint> & { __rowId: number };
 
 export class Table {
   get name (): string { return `[TABLE:${this.schema.name}]`; }
@@ -16,27 +16,30 @@ export class Table {
     const schemaHeader = this.schema.serializeHeader();
     // cant figure out how to do this with bits :'<
     const schemaPadding = (4 - schemaHeader.size % 4) % 4;
-    const rowData = new Blob(this.rows.flatMap(r => {
-      const rowBlob = this.schema.serializeRow(r)
-      if (r.__rowId === 1)
-        rowBlob.arrayBuffer().then(ab => {
-          console.log(`ARRAY BUFFER FOR FIRST ROW OF ${this.name}`, ab);
-        });
-      return rowBlob;
-    }));
-    const dataPadding = (4 - rowData.size % 4) % 4;
+    const rowData = this.rows.flatMap(r => this.schema.serializeRow(r));
+    //const rowData = this.rows.flatMap(r => {
+      //const rowBlob = this.schema.serializeRow(r)
+      //if (r.__rowId === 0)
+        //rowBlob.arrayBuffer().then(ab => {
+          //console.log(`ARRAY BUFFER FOR FIRST ROW OF ${this.name}`, new Uint8Array(ab).join(', '));
+        //});
+      //return rowBlob;
+    //});
+    const rowBlob = new Blob(rowData)
+    const dataPadding = (4 - rowBlob.size % 4) % 4;
+
     return [
       new Uint32Array([
         this.rows.length,
         schemaHeader.size + schemaPadding,
-        rowData.size + dataPadding
+        rowBlob.size + dataPadding
       ]),
       new Blob([
         schemaHeader,
-        new ArrayBuffer(schemaPadding)
+        new ArrayBuffer(schemaPadding) as any // ???
       ]),
       new Blob([
-        rowData,
+        rowBlob,
         new Uint8Array(dataPadding)
       ]),
     ];
@@ -50,12 +53,12 @@ export class Table {
     const blobs = tables.map(t => t.serialize());
     allSizes[0] = blobs.length;
     for (const [i, [sizes, headers, data]] of blobs.entries()) {
-      console.log('BLBO', i, sizes, headers, data)
+      //console.log(`OUT BLOBS FOR T=${i}`, sizes, headers, data)
       allSizes.set(sizes, 1 + i * 3);
       allHeaders.push(headers);
       allData.push(data);
     }
-    console.log({ tables, blobs, allSizes, allHeaders, allData })
+    //console.log({ tables, blobs, allSizes, allHeaders, allData })
     return new Blob([allSizes, ...allHeaders, ...allData]);
   }
 
@@ -81,8 +84,8 @@ export class Table {
     for (let i = 0; i < numTables; i++) {
       tBlobs[i].dataBlob = blob.slice(bo, bo += sizes[i * 3 + 2]);
     };
-    console.log('PRE$EPEE', sizes, tBlobs)
-    const tables = await Promise.all(tBlobs.map(tb => {
+    const tables = await Promise.all(tBlobs.map((tb, i) => {
+      //console.log(`IN BLOBS FOR T=${i}`, tb)
       return this.fromBlob(tb);
     }))
     return Object.fromEntries(tables.map(t => [t.schema.name, t]));
@@ -99,41 +102,35 @@ export class Table {
     const rows: Row[] = [];
     // TODO - could definitely use a stream for this
     const dataBuffer = await dataBlob.arrayBuffer();
-    while (rbo < dataBuffer.byteLength) {
+    console.log(`===== READ ${numRows} OF ${schema.name} =====`)
+    while (__rowId < numRows) {
       const [row, read] = schema.rowFromBuffer(rbo, dataBuffer, __rowId++);
-      rows.push(row)
+      rows.push(row);
       rbo += read;
-      //debugger;
-      if (__rowId > 10) break;
     }
-
-    /*
-    if (rows.length !== numRows) throw new Error(`
-      my paranoia has been vindicated...
-                ...my engineering prowess has not
-          -- the dumbass gamer
-    `);
-    */
 
     return new Table(rows, schema);
   }
 
 
-  print (width: number = 80, fields: Readonly<string[]> = [], n?: number, m?: number): void {
-    if (!fields.length) fields = this.schema.fields;
+  print (
+    width: number = 80,
+    fields: Readonly<string[]>|null = null,
+    n: number|null = null,
+    m: number|null = null
+  ): void {
     const [head, tail] = tableDeco(this.name, width, 18);
-    const printRow = (r: any, ...args: any[]) => {
-      //debugger;
-      return this.schema.printRow(r, fields)
-    }
-    let rows = this.rows;
-    if (n != null) {
-      if (m != null) rows = rows.slice(n, m)
-      else rows = rows.slice(0, n);
-    }
+    const rows = n === null ? this.rows :
+      m === null ? this.rows.slice(0, n) :
+      this.rows.slice(n, m);
+
+    const [pRows, pFields] = fields ?
+      [rows.map((r: Row) => this.schema.printRow(r, fields)), fields]:
+      [rows, this.schema.fields]
+      ;
 
     console.log(head);
-    console.table(rows.map(printRow), fields);
+    console.table(pRows, pFields);
     console.log(tail);
   }
   /*

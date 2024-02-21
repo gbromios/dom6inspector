@@ -2,7 +2,7 @@
   "compilerOptions": {
     "declaration": true,
     "target": "esnext",
-    "lib": ["esnext", "dom"],
+    "lib": ["esnext"],
     "baseUrl": ".",
     "allowSyntheticDefaultImports": true,
     "paths": {
@@ -12,7 +12,7 @@
     "noImplicitAny": false,
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "outDir": "dist"
