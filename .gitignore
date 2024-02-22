@@ -1,3 +1,4 @@
 /bin/
 *.prefs
 node_modules/
+.DS_Store

@@ -1,15 +1,19 @@
 import type { DB } from './load';
-import { createDB } from './create';
+import { createDB, fetchTables } from './create';
 import { loadDB } from './load';
 
 let _dbPromise: Promise<DB>|null = null;
-//globalThis.indexedDB?.deleteDatabase('d6mi'); // testing db creation
+window._KILLDB = () => {
+  globalThis.indexedDB?.deleteDatabase('d6mi');
+  window.location.reload();
+};
 export const CURRENT_VERSION = 30;
 export function useDB (
   version: number = CURRENT_VERSION,
   status: (...args: any[]) => void,
 ): Promise<any> {
   return _dbPromise ??= new Promise<IDBDatabase>((resolve, reject) => {
+    let noUpgradeNeeded = true;
     if (!globalThis.indexedDB)
       return reject('browser does not supported IndexedDB');
     const openRequest = indexedDB.open('d6mi', version);
@@ -23,7 +27,6 @@ export function useDB (
       reject(`fatal error: database blocked (open in another tab?)`)
     });
 
-    let noUpgradeNeeded = true;
     openRequest.addEventListener('upgradeneeded', async (e) => {
       // what does a null newVersion even mean???
       console.log('upgradeneeded', e)
@@ -37,9 +40,12 @@ export function useDB (
 
     });
 
-    openRequest.addEventListener('success', (e) => {
-      console.log('success', e, noUpgradeNeeded)
-      if (noUpgradeNeeded) resolve(openRequest.result);
+    openRequest.addEventListener('success', () => {
+      if (noUpgradeNeeded) {
+        console.log('loaded db from indexedDB');
+        void fetchTables(CURRENT_VERSION); // for console inspection
+        resolve(openRequest.result);
+      }
     });
   }).then(idb => loadDB(idb, CURRENT_VERSION));
 }

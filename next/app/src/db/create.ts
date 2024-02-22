@@ -11,7 +11,7 @@ export function createDB(from: number, to: number, db: IDBDatabase) {
 
 // TODO - need to make this more organized, just create the current one for now
 async function createDB30 (db: IDBDatabase) {
-  const dbBinRequest = fetch('/db.30.bin').then(r => r.blob());
+  const tableRequest = fetchTables(30);
   for (const m of migrations[30]) {
     switch (m.type) {
       case MIGRATION.CREATE_STORE:
@@ -29,13 +29,22 @@ async function createDB30 (db: IDBDatabase) {
     }
   }
 
-  const blob = await dbBinRequest;
-  console.log('heres our blob', blob);
-  const tables = await Table.openBlob(blob)
-  console.log('heres our tables', tables);
-
+  const tables = await tableRequest;
   await bulkInsert({ Unit: tables.Unit }, db);
   return db;
+}
+
+export async function fetchTables (version: number) {
+  const url = `/db.${version}.bin`;
+  const res = await fetch(url);
+  if (!res.ok)
+    throw new Error(`fetch "${url}" failed: ${res.status} ${res.statusText}`);
+  const blob = await res.blob();
+
+  const tables = await Table.openBlob(blob)
+  Object.assign(window, { __t: tables });
+  console.log('tables loaded:', tables);
+  return tables;
 }
 
 

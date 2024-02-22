@@ -3,6 +3,8 @@ import { tableDeco } from './util';
 export type RowData = string[];
 export type Row = Record<string, boolean|number|string|bigint> & { __rowId: number };
 
+type TableBlob = { numRows: number, headerBlob: Blob, dataBlob: Blob };
+
 export class Table {
   get name (): string { return `[TABLE:${this.schema.name}]`; }
   constructor (
@@ -133,6 +135,61 @@ export class Table {
     console.table(pRows, pFields);
     console.log(tail);
   }
+
+  dumpRow (i: number|null, showEmpty = false, useCSS?: boolean): string[] {
+    // TODO — in browser, useCSS === true by default
+    useCSS ??= (globalThis['window'] === globalThis); // idk
+    i ??= Math.floor(Math.random() * this.rows.length);
+    const row = this.rows[i];
+    const out: string[] = [];
+    const css: string[]|null = useCSS ? [] : null;
+    const fmt = fmtStyled.bind(null, out, css);
+    const p = Math.max(
+      ...this.schema.columns
+      .filter(c => showEmpty || row[c.name])
+      .map(c => c.name.length + 2)
+    );
+    if (!row)
+      fmt(`%c${this.schema.name}[${i}] does not exist`, C_NOT_FOUND);
+    else {
+      fmt(`%c${this.schema.name}[${i}]`, C_ROW_HEAD);
+      for (const c of this.schema.columns) {
+        const value = row[c.name];
+        const n = c.name.padStart(p, ' ');
+        switch (typeof value) {
+          case 'boolean':
+            if (value) fmt(`${n}: %cTRUE`, C_TRUE)
+            else if (showEmpty) fmt(`%c${n}: %cFALSE`, C_NOT_FOUND, C_FALSE);
+            break;
+          case 'number':
+            if (value) fmt(`${n}: %c${value}`, C_NUMBER)
+            else if (showEmpty) fmt(`%c${n}: 0`, C_NOT_FOUND);
+            break;
+          case 'string':
+            if (value) fmt(`${n}: %c${value}`, C_STR)
+            else if (showEmpty) fmt(`%c${n}: —`, C_NOT_FOUND);
+            break;
+          case 'bigint':
+            if (value) fmt(`{n}: %c0 %c${value} (BIG)`, C_BIG, C_NOT_FOUND);
+            else if (showEmpty) fmt(`%c${n}: 0 (BIG)`, C_NOT_FOUND);
+            break;
+        }
+      }
+    }
+    if (useCSS) return [out.join('\n'), ...css!];
+    else return [out.join('\n')];
+  }
+
+  findRow (predicate: (row: Row) => boolean, start = 0): number {
+    const N = this.rows.length
+    if (start < 0) start = N - start;
+    for (let i = start; i < N; i++) if (predicate(this.rows[i])) return i;
+    return -1;
+  }
+
+  * filterRows (predicate: (row: Row) => boolean): Generator<Row> {
+    for (const row of this.rows) if (predicate(row)) yield row;
+  }
   /*
   rawToRow (d: string[]): Row {
     return Object.fromEntries(this.schema.columns.map(r => [
@@ -160,4 +217,26 @@ export class Table {
   }
   */
 }
-type TableBlob = { numRows: number, headerBlob: Blob, dataBlob: Blob };
+
+function fmtStyled (
+  out: string[],
+  cssOut: string[] | null,
+  msg: string,
+  ...css: string[]
+) {
+  if (cssOut) {
+    out.push(msg + '%c')
+    cssOut.push(...css, C_RESET);
+  }
+  else out.push(msg.replace(/%c/g, ''));
+}
+
+const C_NOT_FOUND = 'color: #888; font-style: italic;';
+const C_ROW_HEAD = 'font-weight: bolder';
+const C_BOLD = 'font-weight: bold';
+const C_NUMBER = 'color: #A05518; font-weight: bold;';
+const C_TRUE = 'color: #4C38BE; font-weight: bold;';
+const C_FALSE = 'color: #38BE1C; font-weight: bold;';
+const C_STR = 'color: #30AA62; font-weight: bold;';
+const C_BIG = 'color: #7821A3; font-weight: bold;';
+const C_RESET = 'color: unset; font-style: unset; font-weight: unset; background-unset'

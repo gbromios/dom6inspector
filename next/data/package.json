@@ -2,6 +2,7 @@
   "name": "dom6inspector-next-data",
   "type": "module",
   "scripts": {
+    "build:dump-csvs": "./build.sh src/cli/dump-csvs.ts --outfile=dist/dump-csvs.js",
     "dump-csvs": "node dist/dump-csvs.js"
   },
   "private": true,

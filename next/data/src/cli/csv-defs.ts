@@ -175,6 +175,6 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
   },
   '../../gamedata/weapons.csv': {
     name: 'Weapon',
-    ignoreFields: new Set(['end']),
+    ignoreFields: new Set(['end', 'weapon']),
   },
 };

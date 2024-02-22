@@ -1,8 +1,10 @@
 <script setup lang="ts">
   import { RouterView } from 'vue-router';
   import { useStore } from './store';
-  const store = useStore();
+  import LoadingApp from './LoadingApp.vue';
 
+  const store = useStore();
+  Object.assign(window, { __s: store });
   store.initDB().then(() => {
     console.log('store is ready');
   })
@@ -14,7 +16,7 @@
   <div v-if="store.fatalError" class="bootstrap fatal-error">
     <strong>{{ store.fatalError }}</strong>
   </div>
-  <LoadingApp v-else-if="store.loading.state !== 0" v-bind="store.loading"/>
+  <LoadingApp v-else-if="store.loading.state" v-bind="store.loading"/>
   <main v-else class="main-view">
     <div class="scroll-wrapper">
       <RouterView />

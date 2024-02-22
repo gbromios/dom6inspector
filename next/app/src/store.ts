@@ -25,7 +25,6 @@ export const useStore = defineStore('dom6-tables', {
       this.loading.state = 2;
       this.loading.message = 'Loading Database...';
       try {
-        this.loading.state = 0;
         this.loading.message = 'Done!';
         const t0 = performance.now();
         const db = await useDB(version, this.updateLoadingStatus);
@@ -33,6 +32,7 @@ export const useStore = defineStore('dom6-tables', {
         const dt = ((t1 - t0) / 1000).toFixed(3).replace(/\.0+$/, '');
         console.log(`fetched database (${ dt } seconds)`, db);
         this.setDB(db);
+        this.loading.state = 0;
       } catch (ex) {
         this.loading.state = Infinity;
         const errorText = (ex as any).message ?? String(ex);
