@@ -34,13 +34,17 @@ export async function readCSV (
 export type ParseSchemaOptions = {
   name?: string,
   ignoreFields: Set<string>;
-  overrides: Record<string, (v: any) => any>;
   separator: string;
+  overrides: Record<string, (v: any) => any>;
+  knownFields: Record<string, Omit<ColumnArgs, 'index'>>,
+  extraFields: Record<string, (name: string, a: SchemaArgs) => ColumnArgs>,
 }
 
 const DEFAULT_OPTIONS: ParseSchemaOptions = {
   ignoreFields: new Set(),
   overrides: {},
+  knownFields: {},
+  extraFields: {},
   separator: '\t', // surprise!
 }
 
@@ -54,6 +58,7 @@ export function csvToTable(
     flagsUsed: 0,
     columns: [],
     fields: [],
+    rawFields: {},
   };
 
   if (raw.indexOf('\0') !== -1) throw new Error('uh oh')
@@ -75,24 +80,24 @@ export function csvToTable(
     }
   }
 
-  let index = 0;
-  let rawColumns: [col: ColumnArgs, rawIndex: number][] = [];
+  const rawColumns: ColumnArgs[] = [];
 
-  for (const [rawIndex, name] of rawFields.entries()) {
+  for (const [index, name] of rawFields.entries()) {
+    schemaArgs.rawFields[name] = index;
     if (_opts.ignoreFields?.has(name)) continue;
+    if (_opts.knownFields[name])
     try {
       const c = argsFromText(
         name,
-        rawIndex,
         index,
         schemaArgs.flagsUsed,
         rawData,
-        _opts.overrides[name]
+        _opts.overrides[name],
+        schemaArgs,
       );
       if (c !== null) {
-        index++;
         if (c.type === COLUMN.BOOL) schemaArgs.flagsUsed++;
-        rawColumns.push([c, rawIndex]);
+        rawColumns.push(c);
       }
     } catch (ex) {
       console.error(
@@ -103,19 +108,30 @@ export function csvToTable(
     }
   }
 
-  rawColumns.sort((a, b) => cmpFields(a[0], b[0]));
+  if (options?.extraFields) {
+    for (const [name, getField] of Object.entries(options.extraFields)) {
+      rawColumns.push(getField(name, schemaArgs));
+    }
+  }
+
   const data: Row[] = new Array(rawData.length)
     .fill(null)
     .map((_, __rowId) => ({ __rowId }))
     ;
 
-  for (const [index, [colArgs, rawIndex]] of rawColumns.entries()) {
-    colArgs.index = index;
+  for (const colArgs of rawColumns) {
     const col = fromArgs(colArgs);
     schemaArgs.columns.push(col);
     schemaArgs.fields.push(col.name);
+  }
+
+  for (const col of schemaArgs.columns) {
     for (const r of data)
-      data[r.__rowId][col.name] = col.fromText(rawData[r.__rowId][rawIndex])
+      data[r.__rowId][col.name] = col.fromText(
+        rawData[r.__rowId][col.index],
+        r,
+        schemaArgs,
+      );
   }
 
   return new Table(data, new Schema(schemaArgs));

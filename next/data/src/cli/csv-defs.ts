@@ -3,10 +3,11 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
   '../../gamedata/BaseU.csv': {
     name: 'Unit',
     ignoreFields: new Set(['end']),
+    knownFields: {},
     overrides: {
       // csv has unrest/turn which is incunrest / 10; convert to int format
       incunrest: (v) => (Number(v) * 10) || 0
-    }
+    },
   },
   '../../gamedata/BaseI.csv': {
     name: 'Item',

@@ -1,14 +1,15 @@
+import { Schema, type SchemaArgs } from '.';
 import { bigBoyToBytes, bytesToBigBoy, bytesToString, stringToBytes } from './serialize';
 
 export type ColumnArgs = {
   type: COLUMN;
   index: number;
   name: string;
-  readonly override?: (v: any) => any;
-  width: number|null;    // for numbers, in bytes
-  flag: number|null;
-  bit: number|null;
-  order: number;
+  readonly override?: (v: any, u: any, a: SchemaArgs) => any;
+  isArray: boolean,
+  width?: number|null;    // for numbers, in bytes
+  flag?: number|null;
+  bit?: number|null;
 }
 
 export enum COLUMN {
@@ -118,8 +119,8 @@ export interface IColumn<T = any, R extends Uint8Array|number = any> {
   readonly label: string;
   readonly index: number;
   readonly name: string;
-  readonly override?: (v: any) => T;
-  fromText (v: string): T;
+  override?: (v: any, u: any, a: SchemaArgs) => any;
+  fromText(v: string, u: any, a: SchemaArgs): T;
   fromBytes (i: number, bytes: Uint8Array, view: DataView): [T, number];
   serialize (): number[];
   serializeRow (v: any): R,
@@ -141,22 +142,22 @@ export class StringColumn implements IColumn<string, Uint8Array> {
   readonly bit: null = null;
   readonly order = 3;
   readonly offset = null;
-  override?: (v: any) => any;
+  override?: (v: any, u: any, a: SchemaArgs) => any;
   constructor(field: Readonly<ColumnArgs>) {
-    const { index, name, type, override } = field;
+    const { index, name, type, override, isArray } = field;
     if (!isStringColumn(type))
       throw new Error('${name} is not a string column');
-    if (override && typeof override('foo') !== 'string')
-        throw new Error(`seems override for ${name} does not return a string`);
+    //if (override && typeof override('foo') !== 'string')
+        //throw new Error(`seems override for ${name} does not return a string`);
     this.index = index;
     this.name = name;
     this.override = override;
   }
 
-  fromText (v: string): string {
+  fromText(v: string, u: any, a: SchemaArgs): string {
     //return v ?? '""';
     // TODO - need to verify there aren't any single quotes?
-    if (this.override) return this.override(v);
+    if (this.override) return this.override(v, u, a);
     if (v.startsWith('"')) return v.slice(1, -1);
     return v;
   }
@@ -184,13 +185,13 @@ export class NumericColumn implements IColumn<number, Uint8Array> {
   readonly bit: null = null;
   readonly order = 0;
   readonly offset = 0;
-  override?: (v: any) => any;
+  override?: (v: any, u: any, a: SchemaArgs) => any;
   constructor(field: Readonly<ColumnArgs>) {
     const { name, index, type, override } = field;
     if (!isNumericColumn(type))
       throw new Error(`${name} is not a numeric column`);
-    if (override && typeof override('1') !== 'number')
-      throw new Error(`${name} override must return a number`);
+    //if (override && typeof override('1') !== 'number')
+      //throw new Error(`${name} override must return a number`);
     this.index = index;
     this.name = name;
     this.type = type;
@@ -199,8 +200,8 @@ export class NumericColumn implements IColumn<number, Uint8Array> {
     this.override = override;
   }
 
-  fromText(v: string): number {
-     return this.override ? this.override(v) :
+  fromText(v: string, u: any, a: SchemaArgs): number {
+     return this.override ? this.override(v, u, a) :
       v ? Number(v) || 0 : 0;
   }
 
@@ -244,19 +245,17 @@ export class BigColumn implements IColumn<bigint, Uint8Array> {
   readonly bit: null = null;
   readonly order = 2;
   readonly offset = null;
-  override?: (v: any) => bigint;
+  override?: (v: any, u: any, a: SchemaArgs) => any;
   constructor(field: Readonly<ColumnArgs>) {
     const { name, index, type, override } = field;
-    if (override && typeof override('1') !== 'bigint')
-      throw new Error('seems that override does not return a bigint');
     if (!isBigColumn(type)) throw new Error(`${type} is not big`);
     this.index = index;
     this.name = name;
     this.override = override;
   }
 
-  fromText(v: string): bigint {
-    if (this.override) return this.override(v);
+  fromText(v: string, u: any, a: SchemaArgs): bigint {
+    if (this.override) return this.override(v, u, a);
     if (!v) return 0n;
     return BigInt(v);
   }
@@ -286,11 +285,11 @@ export class BoolColumn implements IColumn<boolean, number> {
   readonly bit: number;
   readonly order = 1;
   readonly offset = 0;
-  override?: (v: any) => any;
+  override?: (v: any, u: any, a: SchemaArgs) => any;
   constructor(field: Readonly<ColumnArgs>) {
     const { name, index, type, bit, flag, override } = field;
-    if (override && typeof override('1') !== 'boolean')
-      throw new Error('seems that override does not return a bigint');
+    //if (override && typeof override('1') !== 'boolean')
+      //throw new Error('seems that override does not return a bool');
     if (!isBoolColumn(type)) throw new Error(`${type} is not big`);
     if (typeof flag !== 'number') throw new Error(`flag is not number`);
     if (typeof bit !== 'number') throw new Error(`bit is not number`);
@@ -301,8 +300,8 @@ export class BoolColumn implements IColumn<boolean, number> {
     this.override = override;
   }
 
-  fromText (v: string): boolean {
-    if (this.override) return this.override(v);
+  fromText(v: string, u: any, a: SchemaArgs): boolean {
+    if (this.override) return this.override(v, u, a);
     if (!v || v === '0') return false;
     return true;
   }
@@ -320,9 +319,14 @@ export class BoolColumn implements IColumn<boolean, number> {
   }
 }
 
-export type FComparable = { order: number, bit: number | null, index: number };
+export type FComparable = {
+  order: number,
+  bit: number | null,
+  index: number
+};
 
-export function cmpFields (a: FComparable, b: FComparable): number {
+export function cmpFields (a: Column, b: Column): number {
+  //if (a.isArray !== b.isArray) return a.isArray ? 1 : -1;
   return (a.order - b.order) ||
     ((a.bit ?? 0) - (b.bit ?? 0)) ||
     (a.index - b.index);
@@ -337,39 +341,39 @@ export type Column =
 
 export function argsFromText (
   name: string,
-  i: number,
   index: number,
   flagsUsed: number,
   data: string[][],
-  override?: (v: any) => any,
+  override: ((v: any, u: any, s: any) => any) | undefined,
+  schemaArgs: SchemaArgs
 ): ColumnArgs|null {
   const field = {
     index,
     name,
     override,
     type: COLUMN.UNUSED,
+    // auto-detected fields will never be arrays.
+    isArray: false,
     maxValue: 0,
     minValue: 0,
     width: null as any,
     flag: null as any,
     bit: null as any,
-    order: 999,
   };
   let isUsed = false;
   //if (isUsed !== false) debugger;
   for (const u of data) {
-    const v = field.override ? field.override(u[i]) : u[i];
+    const v = field.override ? field.override(u[index], u, schemaArgs) : u[index];
     if (!v) continue;
-    //console.error(`${i}:${name} ~ ${u[0]}:${u[1]}: ${v}`)
+    //console.error(`${index}:${name} ~ ${u[0]}:${u[1]}: ${v}`)
     isUsed = true;
     const n = Number(v);
     if (Number.isNaN(n)) {
       // must be a string
       field.type = COLUMN.STRING;
-      field.order = 3;
       return field;
     } else if (!Number.isInteger(n)) {
-      console.warn(`\x1b[31m${i}:${name} has a float? "${v}" (${n})\x1b[0m`);
+      console.warn(`\x1b[31m${index}:${name} has a float? "${v}" (${n})\x1b[0m`);
     } else if (!Number.isSafeInteger(n)) {
       // we will have to re-do this part:
       field.minValue = -Infinity;
@@ -381,7 +385,7 @@ export function argsFromText (
   }
 
   if (!isUsed) {
-    //console.error(`\x1b[31m${i}:${name} is unused?\x1b[0m`)
+    //console.error(`\x1b[31m${index}:${name} is unused?\x1b[0m`)
     //debugger;
     return null;
   }
@@ -389,7 +393,6 @@ export function argsFromText (
   if (field.minValue === 0 && field.maxValue === 1) {
     //console.error(`\x1b[34m${i}:${name} appears to be a boolean flag\x1b[0m`);
     field.type = COLUMN.BOOL;
-    field.order = 1;
     field.bit = flagsUsed;
     field.flag = 1 << field.bit % 8;
     return field;
@@ -399,7 +402,6 @@ export function argsFromText (
     // @ts-ignore - we use infinity to mean "not a bigint"
     const type = rangeToNumericType(field.minValue, field.maxValue);
     if (type !== null) {
-      field.order = 0;
       field.type = type;
       return field;
     }
@@ -407,7 +409,6 @@ export function argsFromText (
 
   // BIG BOY TIME
   field.type = COLUMN.BIG;
-  field.order = 2;
   return field;
 }
 

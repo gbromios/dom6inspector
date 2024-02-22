@@ -8,6 +8,7 @@ import {
   BoolColumn,
   StringColumn,
   NumericColumn,
+  cmpFields,
 } from './column';
 import { bytesToString, stringToBytes } from './serialize';
 import { tableDeco } from './util';
@@ -17,6 +18,7 @@ export type SchemaArgs = {
   columns: Column[],
   fields: string[],
   flagsUsed: number;
+  rawFields: Record<string, number>;
 }
 
 type BlobPart = any; // ?????
@@ -32,8 +34,8 @@ export class Schema {
   readonly bigFields: number;
   constructor({ columns, fields, name, flagsUsed }: SchemaArgs) {
     this.name = name;
-    this.columns = [...columns];
-    this.fields = [...fields];
+    this.columns = [...columns].sort(cmpFields);
+    this.fields = this.columns.map(c => c.name);
     this.columnsByName = Object.fromEntries(this.columns.map(c => [c.name, c]));
     this.flagFields = flagsUsed;
     this.fixedWidth = columns.reduce(
@@ -77,6 +79,7 @@ export class Schema {
       columns: [] as Column[],
       fields: [] as string[],
       flagsUsed: 0,
+      rawFields: {}, // none :<
     };
 
     const numFields = bytes[i++] | (bytes[i++] << 8);
@@ -86,7 +89,11 @@ export class Schema {
     while (index < numFields) {
       const type = bytes[i++];
       [name, read] = bytesToString(i, bytes);
-      const f = { index, name, type, width: null, bit: null, flag: null, order: 999 };
+      const f = {
+        index, name, type,
+        width: null, bit: null, flag: null,
+        order: 999, isArray: false
+      };
       i += read;
       let c: Column;
 
