@@ -1,9 +1,10 @@
+import type { DB } from './db';
+
 import { defineStore } from 'pinia';
-import type { DB } from './db/load';
-import { useDB } from './db'
+import { useDB } from './db';
 import { markRaw } from 'vue';
 import { FTColumn } from './column';
-import { columnDefs } from './column-defs';
+import { defs } from './table-defs';
 
 export const useStore = defineStore('dom6-tables', {
   state: () => ({
@@ -45,25 +46,15 @@ export const useStore = defineStore('dom6-tables', {
 
     setDB (db: DB) {
       const t0 = performance.now();
-      markRaw(db.tables);
-      for (const k in db.tables) {
-        const t = db.tables[k];
-        markRaw(t);
-        console.log(`table for ${k}:`, t);
-        for (const r of t) markRaw(r);
-        const { columns, defaults } = columnDefs[k] ?? {};
-        if (!columns) {
-          // some tables are not directly viewable tho
-          console.warn(`no columns defined ${k}`);
-          continue;
-        }
-        // TODO - try loading from localstorage
-        this.columns[k] = Array.from(defaults as string[])
-          .map((k: string) => markRaw(columns[k]));
-
-        console.log('loaded columns:', this.columns[k]);
-      }
+      // um... idk
       this.db = markRaw(db);
+      this.columns = {};
+      for (const name in this.db.tables) {
+        if (this.columns[name]) continue; // already have some
+        // TODO - or load previously saved?
+        const { columns, defaults } = this.db.tables[name];
+        this.columns[name] = columns.filter(({ key }) => defaults.has(key as string));
+      }
       const t1 = performance.now();
       const dt = ((t1 - t0) / 1000).toFixed(3).replace(/\.0+$/, '');
       console.log(`set database (${ dt } seconds)`, this.columns);

@@ -1,35 +1,25 @@
-import { FTColumn } from '@/column';
-import { columnDefs } from '../column-defs'
-
-export type DB = {
-  readonly version: number;
-  readonly idb: IDBDatabase;
-  readonly tables: Record<string, any[]>;
-}
+import type { DB, StoreTable } from '.';
+import { defs } from '../table-defs'
+import { markRaw } from 'vue';
 
 export async function loadDB (idb: IDBDatabase, version: number): Promise<DB> {
   const stores = Array.from(idb.objectStoreNames);
   const transaction = idb.transaction(stores, 'readonly');
+  // TODO — does any of this need marking raw? i dont think so
   const tables = Object.fromEntries(
     await Promise.all(
       stores.map((name) =>
-        new Promise<[string, any[]]>((resolve, reject) => {
+        new Promise<[string, StoreTable]>((resolve, reject) => {
           const request = transaction.objectStore(name).getAll();
-          request.addEventListener('success', () =>
-            resolve([name, request.result as any[]])
+          request.addEventListener( 'success', () => resolve([name, {
+            name,
+            db: idb,
+            ...defs[name],
+            items: (request.result as any[]).map(markRaw),
+            rows: [],
+          }])
           );
           request.addEventListener('error', reject);
-        }
-        ).then(([name, rows]: [string, any[]]) => {
-          if (name in columnDefs) {
-            const cols: FTColumn[] = columnDefs[name].columns;
-            rows = rows.map(r => {
-              const o = {};
-              for (const k in cols) o[k] = cols[k].getItemValue(r, o);
-              return o; // why do i want to use reduce... ASSHOLE
-            });
-          }
-          return [name, rows];
         })
       )
     )

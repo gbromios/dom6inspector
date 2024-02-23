@@ -33,19 +33,24 @@ if (file) {
 
 
 async function getDUMPY(t: Table) {
-  const n = Math.floor(Math.random() * (t.rows.length - 30));
+  //const n = Math.floor(Math.random() * (t.rows.length - 30));
+  const n = 700;
   const m = n + 30;
-  const f = t.schema.fields.slice(0, 8);
-  const blob = Table.concatTables([t]);
+  const f = fields.length ? fields : t.schema.fields.slice(0, 8);
   console.log('\n\n       BEFORE:');
+  for (const c of f) {
+    console.log(` - ${c} : ${t.schema.columnsByName[c].label}`)
+  }
   t.print(width, f, n, m);
-  //t.print(width, null, 10);
-  //t.schema.print();
+  t.schema.print();
+  console.log('wait....');
+  (globalThis._ROWS ??= {})[t.schema.name] = t.rows;
+  await new Promise(r => setTimeout(r, 1000));
+  const blob = Table.concatTables([t]);
   console.log('\n\n')
   const u = await Table.openBlob(blob);
   console.log('\n\n        AFTER:');
-  //u.Unit.print(width, null, 10);
   Object.values(u)[0]?.print(width, f, n, m);
-  //u.Unit.schema.print(width);
+  u.Unit.schema.print(width);
   //await writeFile('./tmp.bin', blob.stream(), { encoding: null });
 }

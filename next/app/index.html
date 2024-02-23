@@ -29,7 +29,8 @@
       background-color: var(--bg-color);
       color: var(--fg-color);
       margin: 0;
-      font-family: system-ui;
+      /*font-family: 'FreeSans', system-ui;*/
+      font-family: 'FreeSans';
       position: fixed;
       top: 0;
       left: 0;
@@ -45,6 +46,43 @@
       align-items: center;
       justify-content: center;
       text-align: center;
+    }
+
+    @font-face {
+      font-family: "FreeSans";
+      src:
+        local("FreeSans"),
+        url("/font/FreeSans.otf") format("opentype"),
+        url("/font/FreeSans.ttf") format("truetype");
+      font-weight: normal;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: "FreeSans";
+      src:
+        local("FreeSansBold"),
+        url("/font/FreeSansBold.otf") format("opentype"),
+        url("/font/FreeSansBold.ttf") format("truetype");
+      font-weight: bold;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: "FreeSans";
+      src:
+        local("FreeSansOblique"),
+        url("/font/FreeSansOblique.otf") format("opentype"),
+        url("/font/FreeSansOblique.ttf") format("truetype");
+      font-weight: normal;
+      font-style: italic;
+    }
+    @font-face {
+      font-family: "FreeSans";
+      src:
+        local("FreeSansBoldOblique"),
+        url("/font/FreeSansBoldOblique.otf") format("opentype"),
+        url("/font/FreeSansBoldOblique.ttf") format("truetype");
+      font-weight: bold;
+      font-style: oblique;
     }
     </style>
     <script type="module" src="/src/main.ts"></script>

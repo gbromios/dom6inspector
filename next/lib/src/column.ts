@@ -1,4 +1,4 @@
-import { Schema, type SchemaArgs } from '.';
+import type { SchemaArgs } from '.';
 import { bigBoyToBytes, bytesToBigBoy, bytesToString, stringToBytes } from './serialize';
 
 export type ColumnArgs = {
@@ -6,23 +6,30 @@ export type ColumnArgs = {
   index: number;
   name: string;
   readonly override?: (v: any, u: any, a: SchemaArgs) => any;
-  isArray: boolean,
   width?: number|null;    // for numbers, in bytes
   flag?: number|null;
   bit?: number|null;
 }
 
 export enum COLUMN {
-  UNUSED = 0,
-  STRING = 1,
-  BOOL   = 2,
-  U8     = 3,
-  I8     = 4,
-  U16    = 5,
-  I16    = 6,
-  U32    = 7,
-  I32    = 8,
-  BIG    = 9,
+  UNUSED       = 0,
+  STRING       = 1,
+  BOOL         = 2,
+  U8           = 3,
+  I8           = 4,
+  U16          = 5,
+  I16          = 6,
+  U32          = 7,
+  I32          = 8,
+  BIG          = 9,
+  STRING_ARRAY = 17,
+  U8_ARRAY     = 19,
+  I8_ARRAY     = 20,
+  U16_ARRAY    = 21,
+  I16_ARRAY    = 22,
+  U32_ARRAY    = 23,
+  I32_ARRAY    = 24,
+  BIG_ARRAY    = 25,
 };
 
 export const COLUMN_LABEL = [
@@ -36,6 +43,21 @@ export const COLUMN_LABEL = [
   'U32',
   'I32',
   'BIG',
+  'UNUSED',
+  'UNUSED',
+  'UNUSED',
+  'UNUSED',
+  'UNUSED',
+  'UNUSED',
+  'UNUSED',
+  'STRING_ARRAY',
+  'U8_ARRAY',
+  'I8_ARRAY',
+  'U16_ARRAY',
+  'I16_ARRAY',
+  'U32_ARRAY',
+  'I32_ARRAY',
+  'BIG_ARRAY',
 ];
 
 export type NUMERIC_COLUMN =
@@ -45,6 +67,12 @@ export type NUMERIC_COLUMN =
   |COLUMN.I16
   |COLUMN.U32
   |COLUMN.I32
+  |COLUMN.U8_ARRAY
+  |COLUMN.I8_ARRAY
+  |COLUMN.U16_ARRAY
+  |COLUMN.I16_ARRAY
+  |COLUMN.U32_ARRAY
+  |COLUMN.I32_ARRAY
   ;
 
 const COLUMN_WIDTH: Record<NUMERIC_COLUMN, 1|2|4> = {
@@ -54,6 +82,13 @@ const COLUMN_WIDTH: Record<NUMERIC_COLUMN, 1|2|4> = {
   [COLUMN.I16]: 2,
   [COLUMN.U32]: 4,
   [COLUMN.I32]: 4,
+  [COLUMN.U8_ARRAY]: 1,
+  [COLUMN.I8_ARRAY]: 1,
+  [COLUMN.U16_ARRAY]: 2,
+  [COLUMN.I16_ARRAY]: 2,
+  [COLUMN.U32_ARRAY]: 4,
+  [COLUMN.I32_ARRAY]: 4,
+
 }
 
 export function rangeToNumericType (
@@ -89,7 +124,7 @@ export function rangeToNumericType (
 }
 
 export function isNumericColumn (type: COLUMN): type is NUMERIC_COLUMN {
-  switch (type) {
+  switch (type & 15) {
     case COLUMN.U8:
     case COLUMN.I8:
     case COLUMN.U16:
@@ -102,16 +137,16 @@ export function isNumericColumn (type: COLUMN): type is NUMERIC_COLUMN {
   }
 }
 
-export function isBigColumn (type: COLUMN): type is COLUMN.BIG {
-  return type === COLUMN.BIG;
+export function isBigColumn (type: COLUMN): type is COLUMN.BIG | COLUMN.BIG_ARRAY {
+  return (type & 15) === COLUMN.BIG;
 }
 
 export function isBoolColumn (type: COLUMN): type is COLUMN.BOOL {
   return type === COLUMN.BOOL;
 }
 
-export function isStringColumn (type: COLUMN): type is COLUMN.STRING {
-  return type === COLUMN.STRING;
+export function isStringColumn (type: COLUMN): type is COLUMN.STRING | COLUMN.STRING_ARRAY {
+  return (type & 15) === COLUMN.STRING;
 }
 
 export interface IColumn<T = any, R extends Uint8Array|number = any> {
@@ -120,10 +155,13 @@ export interface IColumn<T = any, R extends Uint8Array|number = any> {
   readonly index: number;
   readonly name: string;
   override?: (v: any, u: any, a: SchemaArgs) => any;
+  arrayFromText(v: string, u: any, a: SchemaArgs): T[];
   fromText(v: string, u: any, a: SchemaArgs): T;
+  arrayFromBytes(i: number, bytes: Uint8Array, view: DataView): [T[], number];
   fromBytes (i: number, bytes: Uint8Array, view: DataView): [T, number];
   serialize (): number[];
-  serializeRow (v: any): R,
+  serializeRow (v: T): R,
+  serializeArray (v: T[]): R,
   toString (v: string): any;
   readonly width: number|null;    // for numbers, in bytes
   readonly flag: number|null;
@@ -133,7 +171,7 @@ export interface IColumn<T = any, R extends Uint8Array|number = any> {
 }
 
 export class StringColumn implements IColumn<string, Uint8Array> {
-  readonly type: COLUMN.STRING = COLUMN.STRING;
+  readonly type: COLUMN.STRING | COLUMN.STRING_ARRAY;
   readonly label: string = COLUMN_LABEL[COLUMN.STRING];
   readonly index: number;
   readonly name: string;
@@ -142,24 +180,47 @@ export class StringColumn implements IColumn<string, Uint8Array> {
   readonly bit: null = null;
   readonly order = 3;
   readonly offset = null;
+  readonly isArray: boolean;
   override?: (v: any, u: any, a: SchemaArgs) => any;
   constructor(field: Readonly<ColumnArgs>) {
-    const { index, name, type, override, isArray } = field;
+    const { index, name, type, override } = field;
     if (!isStringColumn(type))
       throw new Error('${name} is not a string column');
     //if (override && typeof override('foo') !== 'string')
         //throw new Error(`seems override for ${name} does not return a string`);
+    this.type = type;
+    this.isArray = (this.type & 16) === 16;
     this.index = index;
     this.name = name;
     this.override = override;
   }
 
+  arrayFromText(v: string, u: any, a: SchemaArgs): string[] {
+    if (!this.isArray) throw new Error('i dont gib array');
+    if (this.override) return this.override(v, u, a);
+    // TODO - array separator arg!
+    return v.split(',').map(i => this.fromText(i.trim(), u, a));
+  }
+
   fromText(v: string, u: any, a: SchemaArgs): string {
-    //return v ?? '""';
     // TODO - need to verify there aren't any single quotes?
     if (this.override) return this.override(v, u, a);
     if (v.startsWith('"')) return v.slice(1, -1);
     return v;
+  }
+
+  arrayFromBytes(i: number, bytes: Uint8Array): [string[], number] {
+    if (!this.isArray) throw new Error('i dont gib array');
+    const length = bytes[i++];
+    let read = 1;
+    const strings: string[] = [];
+    for (let n = 0; n < length; n++) {
+      const [s, r] = this.fromBytes(i, bytes);
+      strings.push(s);
+      i += r;
+      read += r;
+    }
+    return [strings, read]
   }
 
   fromBytes(i: number, bytes: Uint8Array): [string, number] {
@@ -167,11 +228,19 @@ export class StringColumn implements IColumn<string, Uint8Array> {
   }
 
   serialize (): number[] {
-    return [COLUMN.STRING, ...stringToBytes(this.name)];
+    return [this.type, ...stringToBytes(this.name)];
   }
 
   serializeRow(v: string): Uint8Array {
     return stringToBytes(v);
+  }
+
+  serializeArray(v: string[]): Uint8Array {
+    if (v.length > 255) throw new Error('too big!');
+    const items = [0];
+    for (let i = 0; i < v.length; i++) items.push(...stringToBytes(v[i]));
+    // seems like there should be a better way to do this?
+    return new Uint8Array(items);
   }
 }
 
@@ -185,6 +254,7 @@ export class NumericColumn implements IColumn<number, Uint8Array> {
   readonly bit: null = null;
   readonly order = 0;
   readonly offset = 0;
+  readonly isArray: boolean;
   override?: (v: any, u: any, a: SchemaArgs) => any;
   constructor(field: Readonly<ColumnArgs>) {
     const { name, index, type, override } = field;
@@ -195,18 +265,45 @@ export class NumericColumn implements IColumn<number, Uint8Array> {
     this.index = index;
     this.name = name;
     this.type = type;
+    this.isArray = (this.type & 16) === 16;
     this.label = COLUMN_LABEL[this.type];
     this.width = COLUMN_WIDTH[this.type];
     this.override = override;
   }
 
+  arrayFromText(v: string, u: any, a: SchemaArgs): number[] {
+    if (!this.isArray) throw new Error('i dont gib array');
+    if (this.override) return this.override(v, u, a);
+    // TODO - array separator arg!
+    return v.split(',').map(i => this.fromText(i.trim(), u, a));
+  }
+
   fromText(v: string, u: any, a: SchemaArgs): number {
-     return this.override ? this.override(v, u, a) :
+     return this.override ? ( this.override(v, u, a) ) :
       v ? Number(v) || 0 : 0;
   }
 
+  arrayFromBytes(i: number, bytes: Uint8Array, view: DataView): [number[], number] {
+    if (!this.isArray) throw new Error('i dont gib array');
+    const length = bytes[i++];
+    let read = 1;
+    const numbers: number[] = [];
+    for (let n = 0; n < length; n++) {
+      const [s, r] = this.numberFromView(i, view);
+      numbers.push(s);
+      i += r;
+      read += r;
+    }
+    return [numbers, read];
+  }
+
   fromBytes(i: number, _: Uint8Array, view: DataView): [number, number] {
-    switch (this.type) {
+      if (this.isArray) throw new Error('im array tho')
+      return this.numberFromView(i, view);
+  }
+
+  private numberFromView (i: number, view: DataView): [number, number] {
+    switch (this.type & 15) {
       case COLUMN.I8:
         return [view.getInt8(i), 1];
       case COLUMN.U8:
@@ -219,6 +316,8 @@ export class NumericColumn implements IColumn<number, Uint8Array> {
         return [view.getInt32(i, true), 4];
       case COLUMN.U32:
         return [view.getUint32(i, true), 4];
+      default:
+        throw new Error('whomst');
     }
   }
 
@@ -228,16 +327,33 @@ export class NumericColumn implements IColumn<number, Uint8Array> {
 
   serializeRow(v: number): Uint8Array {
     const bytes = new Uint8Array(this.width);
-    for (let o = 0; o < this.width; o++)
-      bytes[o] = (v >>> (o * 8)) & 255;
+    this.putBytes(v, 0, bytes);
     return bytes;
+  }
+
+  serializeArray(v: number[]): Uint8Array {
+    if (v.length > 255) throw new Error('too big!');
+    const bytes = new Uint8Array(1 + this.width * v.length)
+    let i = 1;
+    for (const n of v) {
+      bytes[0]++;
+      this.putBytes(n, i, bytes);
+      i+=this.width;
+    }
+    // seems like there should be a better way to do this?
+    return bytes;
+  }
+
+  private putBytes(v: number, i: number, bytes: Uint8Array) {
+    for (let o = 0; o < this.width; o++)
+      bytes[i + o] = (v >>> (o * 8)) & 255;
   }
 
 }
 
 export class BigColumn implements IColumn<bigint, Uint8Array> {
-  readonly type: COLUMN.BIG = COLUMN.BIG;
-  readonly label: string = COLUMN_LABEL[COLUMN.BIG];
+  readonly type: COLUMN.BIG | COLUMN.BIG_ARRAY
+  readonly label: string;
   readonly index: number;
   readonly name: string;
   readonly width: null = null;
@@ -245,13 +361,25 @@ export class BigColumn implements IColumn<bigint, Uint8Array> {
   readonly bit: null = null;
   readonly order = 2;
   readonly offset = null;
+  readonly isArray: boolean;
   override?: (v: any, u: any, a: SchemaArgs) => any;
   constructor(field: Readonly<ColumnArgs>) {
     const { name, index, type, override } = field;
     if (!isBigColumn(type)) throw new Error(`${type} is not big`);
+    this.type = type
+    this.isArray = (type & 16) === 16;
     this.index = index;
     this.name = name;
     this.override = override;
+
+    this.label = COLUMN_LABEL[this.type];
+  }
+
+  arrayFromText(v: string, u: any, a: SchemaArgs): bigint[] {
+    if (!this.isArray) throw new Error('i dont gib array');
+    if (this.override) return this.override(v, u, a);
+    // TODO - array separator arg!
+    return v.split(',').map(i => this.fromText(i.trim(), u, a));
   }
 
   fromText(v: string, u: any, a: SchemaArgs): bigint {
@@ -260,17 +388,40 @@ export class BigColumn implements IColumn<bigint, Uint8Array> {
     return BigInt(v);
   }
 
+  arrayFromBytes(i: number, bytes: Uint8Array): [bigint[], number] {
+    if (!this.isArray) throw new Error('i dont gib array');
+    const length = bytes[i++];
+    let read = 1;
+    const bigbois: bigint[] = [];
+    for (let n = 0; n < length; n++) {
+      const [s, r] = this.fromBytes(i, bytes);
+      bigbois.push(s);
+      i += r;
+      read += r;
+    }
+    return [bigbois, read];
+
+  }
+
   fromBytes(i: number, bytes: Uint8Array): [bigint, number] {
     return bytesToBigBoy(i, bytes);
   }
 
   serialize (): number[] {
-    return [COLUMN.BIG, ...stringToBytes(this.name)];
+    return [this.type, ...stringToBytes(this.name)];
   }
 
   serializeRow(v: bigint): Uint8Array {
     if (!v) return new Uint8Array(1);
     return bigBoyToBytes(v);
+  }
+
+  serializeArray(v: bigint[]): Uint8Array {
+    if (v.length > 255) throw new Error('too big!');
+    const items = [0];
+    for (let i = 0; i < v.length; i++) items.push(...bigBoyToBytes(v[i]));
+    // seems like there should be a better way to do this BIG?
+    return new Uint8Array(items);
   }
 }
 
@@ -285,12 +436,13 @@ export class BoolColumn implements IColumn<boolean, number> {
   readonly bit: number;
   readonly order = 1;
   readonly offset = 0;
+  readonly isArray: boolean = false;
   override?: (v: any, u: any, a: SchemaArgs) => any;
   constructor(field: Readonly<ColumnArgs>) {
     const { name, index, type, bit, flag, override } = field;
     //if (override && typeof override('1') !== 'boolean')
       //throw new Error('seems that override does not return a bool');
-    if (!isBoolColumn(type)) throw new Error(`${type} is not big`);
+    if (!isBoolColumn(type)) throw new Error(`${type} is not bool`);
     if (typeof flag !== 'number') throw new Error(`flag is not number`);
     if (typeof bit !== 'number') throw new Error(`bit is not number`);
     this.flag = flag;
@@ -300,14 +452,24 @@ export class BoolColumn implements IColumn<boolean, number> {
     this.override = override;
   }
 
+  arrayFromText(v: string, u: any, a: SchemaArgs): never[] {
+    throw new Error('I NEVER ARRAY') // yet~?
+  }
+
   fromText(v: string, u: any, a: SchemaArgs): boolean {
     if (this.override) return this.override(v, u, a);
     if (!v || v === '0') return false;
     return true;
   }
 
+  arrayFromBytes(_i: number, _bytes: Uint8Array): [never[], number] {
+    throw new Error('I NEVER ARRAY') // yet~?
+  }
+
   fromBytes(i: number, bytes: Uint8Array): [boolean, number] {
-    return [bytes[i] === this.flag, 0];
+    // ....it did not.
+    //console.log(`READ FROM ${i}: DOES ${bytes[i]} === ${this.flag}`);
+    return [(bytes[i] & this.flag) === this.flag, 0];
   }
 
   serialize (): number[] {
@@ -316,6 +478,10 @@ export class BoolColumn implements IColumn<boolean, number> {
 
   serializeRow(v: boolean): number {
     return v ? this.flag : 0;
+  }
+
+  serializeArray(_v: boolean[]): never {
+    throw new Error('i will NEVER become ARRAY');
   }
 }
 
@@ -326,7 +492,7 @@ export type FComparable = {
 };
 
 export function cmpFields (a: Column, b: Column): number {
-  //if (a.isArray !== b.isArray) return a.isArray ? 1 : -1;
+  if (a.isArray !== b.isArray) return a.isArray ? 1 : -1
   return (a.order - b.order) ||
     ((a.bit ?? 0) - (b.bit ?? 0)) ||
     (a.index - b.index);
@@ -342,15 +508,13 @@ export type Column =
 export function argsFromText (
   name: string,
   index: number,
-  flagsUsed: number,
+  schemaArgs: SchemaArgs,
   data: string[][],
-  override: ((v: any, u: any, s: any) => any) | undefined,
-  schemaArgs: SchemaArgs
 ): ColumnArgs|null {
   const field = {
     index,
     name,
-    override,
+    override: schemaArgs.overrides[name] as undefined | ((...args: any[]) => any),
     type: COLUMN.UNUSED,
     // auto-detected fields will never be arrays.
     isArray: false,
@@ -393,8 +557,8 @@ export function argsFromText (
   if (field.minValue === 0 && field.maxValue === 1) {
     //console.error(`\x1b[34m${i}:${name} appears to be a boolean flag\x1b[0m`);
     field.type = COLUMN.BOOL;
-    field.bit = flagsUsed;
-    field.flag = 1 << field.bit % 8;
+    field.bit = schemaArgs.flagsUsed;
+    field.flag = 1 << (field.bit % 8);
     return field;
   }
 
@@ -412,13 +576,46 @@ export function argsFromText (
   return field;
 }
 
+export function argsFromType (
+  name: string,
+  type: COLUMN,
+  index: number,
+  schemaArgs: SchemaArgs,
+): ColumnArgs {
+  const override = schemaArgs.overrides[name];
+  switch (type & 15) {
+    case COLUMN.UNUSED:
+      throw new Error('how you gonna use it then');
+    case COLUMN.STRING:
+    case COLUMN.BIG:
+      return { type, name, index, override };
+    case COLUMN.BOOL:
+      const bit = schemaArgs.flagsUsed;
+      const flag = 1 << (bit % 8);
+      return { type, name, index, flag, bit, override };
+
+    case COLUMN.U8:
+    case COLUMN.I8:
+      return { type, name, index, width: 1, override };
+    case COLUMN.U16:
+    case COLUMN.I16:
+      return { type, name, index, width: 2, override };
+    case COLUMN.U32:
+    case COLUMN.I32:
+      return { type, name, index, width: 4, override};
+    default:
+      throw new Error(`wat type is this ${type}`);
+  }
+}
+
 export function fromArgs (args: ColumnArgs): Column {
-  switch (args.type) {
+  switch (args.type & 15) {
     case COLUMN.UNUSED:
       throw new Error('unused field cant be turned into a Column');
     case COLUMN.STRING:
       return new StringColumn(args);
     case COLUMN.BOOL:
+      if (args.type & 16) throw new Error('no such thing as a flag array');
       return new BoolColumn(args);
     case COLUMN.U8:
     case COLUMN.I8:
@@ -429,5 +626,7 @@ export function fromArgs (args: ColumnArgs): Column {
       return new NumericColumn(args);
     case COLUMN.BIG:
       return new BigColumn(args);
+    default:
+      throw new Error(`wat type is this ${args.type}`);
   }
 }

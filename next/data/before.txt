@@ -1,0 +1,508 @@
+       BEFORE:
+ - inquisitor : BOOL
+ - name : STRING
+┏━━━━ [TABLE:Unit] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┌─────────┬────────────┬────────────────────────────┐
+│ (index) │ inquisitor │            name            │
+├─────────┼────────────┼────────────────────────────┤
+│    0    │   false    │         'Warrior'          │
+│    1    │   false    │         'Warrior'          │
+│    2    │   false    │         'Warrior'          │
+│    3    │   false    │       'Sun Warrior'        │
+│    4    │   false    │      'Eagle Warrior'       │
+│    5    │   false    │      'Jaguar Warrior'      │
+│    6    │   false    │       'Were Jaguar'        │
+│    7    │   false    │          'Scout'           │
+│    8    │   false    │       'Tribal King'        │
+│    9    │   false    │      'Mictlan Priest'      │
+│   10    │   false    │       'Priest King'        │
+│   11    │   false    │       'Rain Priest'        │
+│   12    │   false    │       'Moon Priest'        │
+│   13    │   false    │  'High Priest of the Sun'  │
+│   14    │   false    │      'Ether Warrior'       │
+│   15    │   false    │        'Ether Lord'        │
+│   16    │   false    │      'Black Templar'       │
+│   17    │    true    │      'Black Acolyte'       │
+│   18    │    true    │       'Black Priest'       │
+│   19    │   false    │       'Giant Mummy'        │
+│   20    │   false    │       'Giant Mummy'        │
+│   21    │   false    │          'Mummy'           │
+│   22    │   false    │        'Diabolist'         │
+│   23    │   false    │      'Goetic Master'       │
+│   24    │   false    │        'Strategos'         │
+│   25    │   false    │     'Heart Companion'      │
+│   26    │   false    │       'Master Mason'       │
+│   27    │   false    │          'Sapper'          │
+│   28    │   false    │    'Thing From Beyond'     │
+│   29    │   false    │ 'Thing That Should Not Be' │
+└─────────┴────────────┴────────────────────────────┘
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+╔════ Unit ════════════════════════════════════════════════════════════════════╗
+{ fixedWidth: 390, bigFields: 0, stringFields: 3, flagFields: 141 }
+┌─────────┬──────────────────────────┬─────────────┬────────┬───────┬──────┬──────┬──────┬───────┐
+│ (index) │           name           │    label    │ offset │ order │ bit  │ type │ flag │ width │
+├─────────┼──────────────────────────┼─────────────┼────────┼───────┼──────┼──────┼──────┼───────┤
+│    0    │           'id'           │    'U16'    │   0    │   0   │ null │  5   │ null │   2   │
+│    1    │           'rt'           │    'U8'     │   2    │   0   │ null │  3   │ null │   1   │
+│    2    │        'reclimit'        │    'I8'     │   3    │   0   │ null │  4   │ null │   1   │
+│    3    │        'basecost'        │    'U16'    │   4    │   0   │ null │  5   │ null │   2   │
+│    4    │         'rcost'          │    'I8'     │   6    │   0   │ null │  4   │ null │   1   │
+│    5    │          'size'          │    'U8'     │   7    │   0   │ null │  3   │ null │   1   │
+│    6    │        'ressize'         │    'U8'     │   8    │   0   │ null │  3   │ null │   1   │
+│    7    │           'hp'           │    'U16'    │   9    │   0   │ null │  5   │ null │   2   │
+│    8    │          'prot'          │    'U8'     │   11   │   0   │ null │  3   │ null │   1   │
+│    9    │           'mr'           │    'U8'     │   12   │   0   │ null │  3   │ null │   1   │
+│   10    │          'mor'           │    'U8'     │   13   │   0   │ null │  3   │ null │   1   │
+│   11    │          'str'           │    'U8'     │   14   │   0   │ null │  3   │ null │   1   │
+│   12    │          'att'           │    'U8'     │   15   │   0   │ null │  3   │ null │   1   │
+│   13    │          'def'           │    'U8'     │   16   │   0   │ null │  3   │ null │   1   │
+│   14    │          'prec'          │    'U8'     │   17   │   0   │ null │  3   │ null │   1   │
+│   15    │          'enc'           │    'U8'     │   18   │   0   │ null │  3   │ null │   1   │
+│   16    │        'mapmove'         │    'U8'     │   19   │   0   │ null │  3   │ null │   1   │
+│   17    │           'ap'           │    'U8'     │   20   │   0   │ null │  3   │ null │   1   │
+│   18    │      'ambidextrous'      │    'U8'     │   21   │   0   │ null │  3   │ null │   1   │
+│   19    │        'mountmnr'        │    'U16'    │   22   │   0   │ null │  5   │ null │   2   │
+│   20    │      'skilledrider'      │    'U8'     │   24   │   0   │ null │  3   │ null │   1   │
+│   21    │     'reinvigoration'     │    'U8'     │   25   │   0   │ null │  3   │ null │   1   │
+│   22    │         'leader'         │    'U8'     │   26   │   0   │ null │  3   │ null │   1   │
+│   23    │      'undeadleader'      │    'U8'     │   27   │   0   │ null │  3   │ null │   1   │
+│   24    │      'magicleader'       │    'U8'     │   28   │   0   │ null │  3   │ null │   1   │
+│   25    │        'startage'        │    'U16'    │   29   │   0   │ null │  5   │ null │   2   │
+│   26    │         'maxage'         │    'U16'    │   31   │   0   │ null │  5   │ null │   2   │
+│   27    │          'hand'          │    'U8'     │   33   │   0   │ null │  3   │ null │   1   │
+│   28    │          'head'          │    'U8'     │   34   │   0   │ null │  3   │ null │   1   │
+│   29    │          'misc'          │    'U8'     │   35   │   0   │ null │  3   │ null │   1   │
+│   30    │        'pathcost'        │    'U8'     │   36   │   0   │ null │  3   │ null │   1   │
+│   31    │        'startdom'        │    'U8'     │   37   │   0   │ null │  3   │ null │   1   │
+│   32    │      'bonusspells'       │    'U8'     │   38   │   0   │ null │  3   │ null │   1   │
+│   33    │           'F'            │    'U8'     │   39   │   0   │ null │  3   │ null │   1   │
+│   34    │           'A'            │    'U8'     │   40   │   0   │ null │  3   │ null │   1   │
+│   35    │           'W'            │    'U8'     │   41   │   0   │ null │  3   │ null │   1   │
+│   36    │           'E'            │    'U8'     │   42   │   0   │ null │  3   │ null │   1   │
+│   37    │           'S'            │    'U8'     │   43   │   0   │ null │  3   │ null │   1   │
+│   38    │           'D'            │    'U8'     │   44   │   0   │ null │  3   │ null │   1   │
+│   39    │           'N'            │    'U8'     │   45   │   0   │ null │  3   │ null │   1   │
+│   40    │           'G'            │    'U8'     │   46   │   0   │ null │  3   │ null │   1   │
+│   41    │           'B'            │    'U8'     │   47   │   0   │ null │  3   │ null │   1   │
+│   42    │           'H'            │    'U8'     │   48   │   0   │ null │  3   │ null │   1   │
+│   43    │    'sailingshipsize'     │    'U16'    │   49   │   0   │ null │  5   │ null │   2   │
+│   44    │   'sailingmaxunitsize'   │    'U8'     │   51   │   0   │ null │  3   │ null │   1   │
+│   45    │        'stealthy'        │    'U8'     │   52   │   0   │ null │  3   │ null │   1   │
+│   46    │        'patience'        │    'U8'     │   53   │   0   │ null │  3   │ null │   1   │
+│   47    │         'seduce'         │    'U8'     │   54   │   0   │ null │  3   │ null │   1   │
+│   48    │        'succubus'        │    'U8'     │   55   │   0   │ null │  3   │ null │   1   │
+│   49    │        'corrupt'         │    'U8'     │   56   │   0   │ null │  3   │ null │   1   │
+│   50    │        'homesick'        │    'U8'     │   57   │   0   │ null │  3   │ null │   1   │
+│   51    │    'formationfighter'    │    'I8'     │   58   │   0   │ null │  4   │ null │   1   │
+│   52    │        'standard'        │    'I8'     │   59   │   0   │ null │  4   │ null │   1   │
+│   53    │     'inspirational'      │    'I8'     │   60   │   0   │ null │  4   │ null │   1   │
+│   54    │       'taskmaster'       │    'U8'     │   61   │   0   │ null │  3   │ null │   1   │
+│   55    │      'beastmaster'       │    'U8'     │   62   │   0   │ null │  3   │ null │   1   │
+│   56    │       'bodyguard'        │    'U8'     │   63   │   0   │ null │  3   │ null │   1   │
+│   57    │     'waterbreathing'     │    'U16'    │   64   │   0   │ null │  5   │ null │   2   │
+│   58    │        'iceprot'         │    'U8'     │   66   │   0   │ null │  3   │ null │   1   │
+│   59    │      'invulnerable'      │    'U8'     │   67   │   0   │ null │  3   │ null │   1   │
+│   60    │        'shockres'        │    'I8'     │   68   │   0   │ null │  4   │ null │   1   │
+│   61    │        'fireres'         │    'I8'     │   69   │   0   │ null │  4   │ null │   1   │
+│   62    │        'coldres'         │    'I8'     │   70   │   0   │ null │  4   │ null │   1   │
+│   63    │       'poisonres'        │    'U8'     │   71   │   0   │ null │  3   │ null │   1   │
+│   64    │        'acidres'         │    'I8'     │   72   │   0   │ null │  4   │ null │   1   │
+│   65    │       'voidsanity'       │    'U8'     │   73   │   0   │ null │  3   │ null │   1   │
+│   66    │       'darkvision'       │    'U8'     │   74   │   0   │ null │  3   │ null │   1   │
+│   67    │       'animalawe'        │    'U8'     │   75   │   0   │ null │  3   │ null │   1   │
+│   68    │          'awe'           │    'U8'     │   76   │   0   │ null │  3   │ null │   1   │
+│   69    │      'haltheretic'       │    'U8'     │   77   │   0   │ null │  3   │ null │   1   │
+│   70    │          'fear'          │    'U8'     │   78   │   0   │ null │  3   │ null │   1   │
+│   71    │        'berserk'         │    'U8'     │   79   │   0   │ null │  3   │ null │   1   │
+│   72    │          'cold'          │    'U8'     │   80   │   0   │ null │  3   │ null │   1   │
+│   73    │          'heat'          │    'U8'     │   81   │   0   │ null │  3   │ null │   1   │
+│   74    │       'fireshield'       │    'U8'     │   82   │   0   │ null │  3   │ null │   1   │
+│   75    │     'banefireshield'     │    'U8'     │   83   │   0   │ null │  3   │ null │   1   │
+│   76    │       'damagerev'        │    'U8'     │   84   │   0   │ null │  3   │ null │   1   │
+│   77    │      'poisoncloud'       │    'U8'     │   85   │   0   │ null │  3   │ null │   1   │
+│   78    │      'diseasecloud'      │    'U8'     │   86   │   0   │ null │  3   │ null │   1   │
+│   79    │         'slimer'         │    'U8'     │   87   │   0   │ null │  3   │ null │   1   │
+│   80    │       'mindslime'        │    'U16'    │   88   │   0   │ null │  5   │ null │   2   │
+│   81    │      'regeneration'      │    'U8'     │   90   │   0   │ null │  3   │ null │   1   │
+│   82    │       'reanimator'       │    'U8'     │   91   │   0   │ null │  3   │ null │   1   │
+│   83    │      'poisonarmor'       │    'U8'     │   92   │   0   │ null │  3   │ null │   1   │
+│   84    │        'eyeloss'         │    'U8'     │   93   │   0   │ null │  3   │ null │   1   │
+│   85    │        'ethtrue'         │    'U8'     │   94   │   0   │ null │  3   │ null │   1   │
+│   86    │       'stormpower'       │    'U8'     │   95   │   0   │ null │  3   │ null │   1   │
+│   87    │       'firepower'        │    'U8'     │   96   │   0   │ null │  3   │ null │   1   │
+│   88    │       'coldpower'        │    'U8'     │   97   │   0   │ null │  3   │ null │   1   │
+│   89    │       'darkpower'        │    'U8'     │   98   │   0   │ null │  3   │ null │   1   │
+│   90    │       'chaospower'       │    'U8'     │   99   │   0   │ null │  3   │ null │   1   │
+│   91    │       'magicpower'       │    'U8'     │  100   │   0   │ null │  3   │ null │   1   │
+│   92    │      'winterpower'       │    'U8'     │  101   │   0   │ null │  3   │ null │   1   │
+│   93    │      'springpower'       │    'U8'     │  102   │   0   │ null │  3   │ null │   1   │
+│   94    │      'summerpower'       │    'U8'     │  103   │   0   │ null │  3   │ null │   1   │
+│   95    │       'fallpower'        │    'U8'     │  104   │   0   │ null │  3   │ null │   1   │
+│   96    │       'forgebonus'       │    'U8'     │  105   │   0   │ null │  3   │ null │   1   │
+│   97    │     'fixforgebonus'      │    'I8'     │  106   │   0   │ null │  4   │ null │   1   │
+│   98    │      'mastersmith'       │    'I8'     │  107   │   0   │ null │  4   │ null │   1   │
+│   99    │       'resources'        │    'U8'     │  108   │   0   │ null │  3   │ null │   1   │
+│   100   │       'autohealer'       │    'U8'     │  109   │   0   │ null │  3   │ null │   1   │
+│   101   │     'autodishealer'      │    'U8'     │  110   │   0   │ null │  3   │ null │   1   │
+│   102   │      'nobadevents'       │    'U8'     │  111   │   0   │ null │  3   │ null │   1   │
+│   103   │         'insane'         │    'U8'     │  112   │   0   │ null │  3   │ null │   1   │
+│   104   │     'shatteredsoul'      │    'U8'     │  113   │   0   │ null │  3   │ null │   1   │
+│   105   │         'leper'          │    'U8'     │  114   │   0   │ null │  3   │ null │   1   │
+│   106   │        'chaosrec'        │    'U8'     │  115   │   0   │ null │  3   │ null │   1   │
+│   107   │      'pillagebonus'      │    'U8'     │  116   │   0   │ null │  3   │ null │   1   │
+│   108   │      'patrolbonus'       │    'I8'     │  117   │   0   │ null │  4   │ null │   1   │
+│   109   │       'castledef'        │    'U8'     │  118   │   0   │ null │  3   │ null │   1   │
+│   110   │       'siegebonus'       │    'I16'    │  119   │   0   │ null │  6   │ null │   2   │
+│   111   │       'incprovdef'       │    'U8'     │  121   │   0   │ null │  3   │ null │   1   │
+│   112   │      'supplybonus'       │    'U8'     │  122   │   0   │ null │  3   │ null │   1   │
+│   113   │       'incunrest'        │    'I16'    │  123   │   0   │ null │  6   │ null │   2   │
+│   114   │        'popkill'         │    'U16'    │  125   │   0   │ null │  5   │ null │   2   │
+│   115   │     'researchbonus'      │    'I8'     │  127   │   0   │ null │  4   │ null │   1   │
+│   116   │      'inspiringres'      │    'I8'     │  128   │   0   │ null │  4   │ null │   1   │
+│   117   │         'douse'          │    'U8'     │  129   │   0   │ null │  3   │ null │   1   │
+│   118   │       'adeptsacr'        │    'U8'     │  130   │   0   │ null │  3   │ null │   1   │
+│   119   │      'crossbreeder'      │    'U8'     │  131   │   0   │ null │  3   │ null │   1   │
+│   120   │       'makepearls'       │    'U8'     │  132   │   0   │ null │  3   │ null │   1   │
+│   121   │        'voidsum'         │    'U8'     │  133   │   0   │ null │  3   │ null │   1   │
+│   122   │        'heretic'         │    'U8'     │  134   │   0   │ null │  3   │ null │   1   │
+│   123   │        'elegist'         │    'U8'     │  135   │   0   │ null │  3   │ null │   1   │
+│   124   │      'shapechange'       │    'U16'    │  136   │   0   │ null │  5   │ null │   2   │
+│   125   │       'firstshape'       │    'U16'    │  138   │   0   │ null │  5   │ null │   2   │
+│   126   │      'secondshape'       │    'U16'    │  140   │   0   │ null │  5   │ null │   2   │
+│   127   │       'landshape'        │    'U16'    │  142   │   0   │ null │  5   │ null │   2   │
+│   128   │       'watershape'       │    'U16'    │  144   │   0   │ null │  5   │ null │   2   │
+│   129   │      'forestshape'       │    'U16'    │  146   │   0   │ null │  5   │ null │   2   │
+│   130   │       'plainshape'       │    'U16'    │  148   │   0   │ null │  5   │ null │   2   │
+│   131   │        'xpshape'         │    'U8'     │  150   │   0   │ null │  3   │ null │   1   │
+│   132   │        'nametype'        │    'U8'     │  151   │   0   │ null │  3   │ null │   1   │
+│   133   │         'summon'         │    'I16'    │  152   │   0   │ null │  6   │ null │   2   │
+│   134   │        'n_summon'        │    'U8'     │  154   │   0   │ null │  3   │ null │   1   │
+│   135   │      'batstartsum1'      │    'U16'    │  155   │   0   │ null │  5   │ null │   2   │
+│   136   │      'batstartsum2'      │    'U16'    │  157   │   0   │ null │  5   │ null │   2   │
+│   137   │       'domsummon'        │    'U16'    │  159   │   0   │ null │  5   │ null │   2   │
+│   138   │       'domsummon2'       │    'U16'    │  161   │   0   │ null │  5   │ null │   2   │
+│   139   │      'domsummon20'       │    'I16'    │  163   │   0   │ null │  6   │ null │   2   │
+│   140   │     'bloodvengeance'     │    'U8'     │  165   │   0   │ null │  3   │ null │   1   │
+│   141   │    'bringeroffortune'    │    'I8'     │  166   │   0   │ null │  4   │ null │   1   │
+│   142   │         'realm1'         │    'U8'     │  167   │   0   │ null │  3   │ null │   1   │
+│   143   │      'batstartsum3'      │    'U16'    │  168   │   0   │ null │  5   │ null │   2   │
+│   144   │      'batstartsum4'      │    'U16'    │  170   │   0   │ null │  5   │ null │   2   │
+│   145   │     'batstartsum1d6'     │    'U16'    │  172   │   0   │ null │  5   │ null │   2   │
+│   146   │     'batstartsum2d6'     │    'U16'    │  174   │   0   │ null │  5   │ null │   2   │
+│   147   │     'batstartsum3d6'     │    'I16'    │  176   │   0   │ null │  6   │ null │   2   │
+│   148   │     'batstartsum4d6'     │    'U16'    │  178   │   0   │ null │  5   │ null │   2   │
+│   149   │     'batstartsum5d6'     │    'U8'     │  180   │   0   │ null │  3   │ null │   1   │
+│   150   │     'batstartsum6d6'     │    'U16'    │  181   │   0   │ null │  5   │ null │   2   │
+│   151   │     'turmoilsummon'      │    'U16'    │  183   │   0   │ null │  5   │ null │   2   │
+│   152   │       'deathfire'        │    'U8'     │  185   │   0   │ null │  3   │ null │   1   │
+│   153   │        'uwregen'         │    'U8'     │  186   │   0   │ null │  3   │ null │   1   │
+│   154   │        'shrinkhp'        │    'U8'     │  187   │   0   │ null │  3   │ null │   1   │
+│   155   │         'growhp'         │    'U8'     │  188   │   0   │ null │  3   │ null │   1   │
+│   156   │      'startingaff'       │    'U32'    │  189   │   0   │ null │  7   │ null │   4   │
+│   157   │     'fixedresearch'      │    'U8'     │  193   │   0   │ null │  3   │ null │   1   │
+│   158   │       'lamialord'        │    'U8'     │  194   │   0   │ null │  3   │ null │   1   │
+│   159   │      'preanimator'       │    'U8'     │  195   │   0   │ null │  3   │ null │   1   │
+│   160   │      'dreanimator'       │    'U8'     │  196   │   0   │ null │  3   │ null │   1   │
+│   161   │        'mummify'         │    'U16'    │  197   │   0   │ null │  5   │ null │   2   │
+│   162   │     'onebattlespell'     │    'U8'     │  199   │   0   │ null │  3   │ null │   1   │
+│   163   │      'fireattuned'       │    'U8'     │  200   │   0   │ null │  3   │ null │   1   │
+│   164   │       'airattuned'       │    'U8'     │  201   │   0   │ null │  3   │ null │   1   │
+│   165   │      'waterattuned'      │    'U8'     │  202   │   0   │ null │  3   │ null │   1   │
+│   166   │      'earthattuned'      │    'U8'     │  203   │   0   │ null │  3   │ null │   1   │
+│   167   │     'astralattuned'      │    'U8'     │  204   │   0   │ null │  3   │ null │   1   │
+│   168   │      'deathattuned'      │    'U8'     │  205   │   0   │ null │  3   │ null │   1   │
+│   169   │     'natureattuned'      │    'U8'     │  206   │   0   │ null │  3   │ null │   1   │
+│   170   │      'magicboostF'       │    'U8'     │  207   │   0   │ null │  3   │ null │   1   │
+│   171   │      'magicboostA'       │    'I8'     │  208   │   0   │ null │  4   │ null │   1   │
+│   172   │      'magicboostW'       │    'I8'     │  209   │   0   │ null │  4   │ null │   1   │
+│   173   │      'magicboostE'       │    'I8'     │  210   │   0   │ null │  4   │ null │   1   │
+│   174   │      'magicboostS'       │    'U8'     │  211   │   0   │ null │  3   │ null │   1   │
+│   175   │      'magicboostD'       │    'I8'     │  212   │   0   │ null │  4   │ null │   1   │
+│   176   │      'magicboostN'       │    'U8'     │  213   │   0   │ null │  3   │ null │   1   │
+│   177   │     'magicboostALL'      │    'I8'     │  214   │   0   │ null │  4   │ null │   1   │
+│   178   │          'eyes'          │    'U8'     │  215   │   0   │ null │  3   │ null │   1   │
+│   179   │      'corpseeater'       │    'U8'     │  216   │   0   │ null │  3   │ null │   1   │
+│   180   │       'poisonskin'       │    'U8'     │  217   │   0   │ null │  3   │ null │   1   │
+│   181   │       'startitem'        │    'U8'     │  218   │   0   │ null │  3   │ null │   1   │
+│   182   │       'battlesum5'       │    'U16'    │  219   │   0   │ null │  5   │ null │   2   │
+│   183   │       'acidshield'       │    'U8'     │  221   │   0   │ null │  3   │ null │   1   │
+│   184   │      'prophetshape'      │    'U16'    │  222   │   0   │ null │  5   │ null │   2   │
+│   185   │         'horror'         │    'U8'     │  224   │   0   │ null │  3   │ null │   1   │
+│   186   │        'latehero'        │    'U8'     │  225   │   0   │ null │  3   │ null │   1   │
+│   187   │        'uwdamage'        │    'U8'     │  226   │   0   │ null │  3   │ null │   1   │
+│   188   │       'landdamage'       │    'U8'     │  227   │   0   │ null │  3   │ null │   1   │
+│   189   │         'rpcost'         │    'U32'    │  228   │   0   │ null │  7   │ null │   4   │
+│   190   │     'mummification'      │    'U16'    │  232   │   0   │ null │  5   │ null │   2   │
+│   191   │       'diseaseres'       │    'U8'     │  234   │   0   │ null │  3   │ null │   1   │
+│   192   │      'raiseonkill'       │    'U8'     │  235   │   0   │ null │  3   │ null │   1   │
+│   193   │       'raiseshape'       │    'U16'    │  236   │   0   │ null │  5   │ null │   2   │
+│   194   │  'sendlesserhorrormult'  │    'U8'     │  238   │   0   │ null │  3   │ null │   1   │
+│   195   │      'incorporate'       │    'U8'     │  239   │   0   │ null │  3   │ null │   1   │
+│   196   │       'blessbers'        │    'U8'     │  240   │   0   │ null │  3   │ null │   1   │
+│   197   │     'curseattacker'      │    'U8'     │  241   │   0   │ null │  3   │ null │   1   │
+│   198   │         'uwheat'         │    'U8'     │  242   │   0   │ null │  3   │ null │   1   │
+│   199   │     'slothresearch'      │    'U8'     │  243   │   0   │ null │  3   │ null │   1   │
+│   200   │     'horrordeserter'     │    'U8'     │  244   │   0   │ null │  3   │ null │   1   │
+│   201   │      'sorceryrange'      │    'U8'     │  245   │   0   │ null │  3   │ null │   1   │
+│   202   │         'older'          │    'I8'     │  246   │   0   │ null │  4   │ null │   1   │
+│   203   │       'disbelieve'       │    'U8'     │  247   │   0   │ null │  3   │ null │   1   │
+│   204   │       'firerange'        │    'U8'     │  248   │   0   │ null │  3   │ null │   1   │
+│   205   │      'astralrange'       │    'U8'     │  249   │   0   │ null │  3   │ null │   1   │
+│   206   │      'naturerange'       │    'U8'     │  250   │   0   │ null │  3   │ null │   1   │
+│   207   │       'beartattoo'       │    'U8'     │  251   │   0   │ null │  3   │ null │   1   │
+│   208   │      'horsetattoo'       │    'U8'     │  252   │   0   │ null │  3   │ null │   1   │
+│   209   │     'reincarnation'      │    'U8'     │  253   │   0   │ null │  3   │ null │   1   │
+│   210   │       'wolftattoo'       │    'U8'     │  254   │   0   │ null │  3   │ null │   1   │
+│   211   │       'boartattoo'       │    'U8'     │  255   │   0   │ null │  3   │ null │   1   │
+│   212   │       'sleepaura'        │    'U8'     │  256   │   0   │ null │  3   │ null │   1   │
+│   213   │      'snaketattoo'       │    'U8'     │  257   │   0   │ null │  3   │ null │   1   │
+│   214   │        'appetite'        │    'I8'     │  258   │   0   │ null │  4   │ null │   1   │
+│   215   │     'templetrainer'      │    'U8'     │  259   │   0   │ null │  3   │ null │   1   │
+│   216   │       'infernoret'       │    'U8'     │  260   │   0   │ null │  3   │ null │   1   │
+│   217   │       'kokytosret'       │    'U8'     │  261   │   0   │ null │  3   │ null │   1   │
+│   218   │      'addrandomage'      │    'U16'    │  262   │   0   │ null │  5   │ null │   2   │
+│   219   │         'unsurr'         │    'U8'     │  264   │   0   │ null │  3   │ null │   1   │
+│   220   │      'speciallook'       │    'U8'     │  265   │   0   │ null │  3   │ null │   1   │
+│   221   │       'bugreform'        │    'U8'     │  266   │   0   │ null │  3   │ null │   1   │
+│   222   │       'onisummon'        │    'U8'     │  267   │   0   │ null │  3   │ null │   1   │
+│   223   │         'sunawe'         │    'U8'     │  268   │   0   │ null │  3   │ null │   1   │
+│   224   │        'startaff'        │    'U8'     │  269   │   0   │ null │  3   │ null │   1   │
+│   225   │        'ivylord'         │    'U8'     │  270   │   0   │ null │  3   │ null │   1   │
+│   226   │       'triplegod'        │    'U8'     │  271   │   0   │ null │  3   │ null │   1   │
+│   227   │      'triplegodmag'      │    'U8'     │  272   │   0   │ null │  3   │ null │   1   │
+│   228   │        'fortkill'        │    'U8'     │  273   │   0   │ null │  3   │ null │   1   │
+│   229   │       'thronekill'       │    'U8'     │  274   │   0   │ null │  3   │ null │   1   │
+│   230   │         'digest'         │    'U8'     │  275   │   0   │ null │  3   │ null │   1   │
+│   231   │       'indepmove'        │    'U8'     │  276   │   0   │ null │  3   │ null │   1   │
+│   232   │        'entangle'        │    'U8'     │  277   │   0   │ null │  3   │ null │   1   │
+│   233   │        'alchemy'         │    'U8'     │  278   │   0   │ null │  3   │ null │   1   │
+│   234   │       'woundfend'        │    'U8'     │  279   │   0   │ null │  3   │ null │   1   │
+│   235   │       'falsearmy'        │    'I8'     │  280   │   0   │ null │  4   │ null │   1   │
+│   236   │        'summon5'         │    'U8'     │  281   │   0   │ null │  3   │ null │   1   │
+│   237   │         'slaver'         │    'U16'    │  282   │   0   │ null │  5   │ null │   2   │
+│   238   │     'deathparalyze'      │    'U8'     │  284   │   0   │ null │  3   │ null │   1   │
+│   239   │    'corpseconstruct'     │    'U8'     │  285   │   0   │ null │  3   │ null │   1   │
+│   240   │ 'guardianspiritmodifier' │    'I8'     │  286   │   0   │ null │  4   │ null │   1   │
+│   241   │       'iceforging'       │    'U8'     │  287   │   0   │ null │  3   │ null │   1   │
+│   242   │     'clockworklord'      │    'U8'     │  288   │   0   │ null │  3   │ null │   1   │
+│   243   │     'minsizeleader'      │    'U8'     │  289   │   0   │ null │  3   │ null │   1   │
+│   244   │        'ironvul'         │    'U8'     │  290   │   0   │ null │  3   │ null │   1   │
+│   245   │     'heathensummon'      │    'U8'     │  291   │   0   │ null │  3   │ null │   1   │
+│   246   │      'powerofdeath'      │    'U8'     │  292   │   0   │ null │  3   │ null │   1   │
+│   247   │       'reformtime'       │    'I8'     │  293   │   0   │ null │  4   │ null │   1   │
+│   248   │       'twiceborn'        │    'U16'    │  294   │   0   │ null │  5   │ null │   2   │
+│   249   │     'tmpastralgems'      │    'U8'     │  296   │   0   │ null │  3   │ null │   1   │
+│   250   │      'startheroab'       │    'U8'     │  297   │   0   │ null │  3   │ null │   1   │
+│   251   │      'uwfireshield'      │    'U8'     │  298   │   0   │ null │  3   │ null │   1   │
+│   252   │        'saltvul'         │    'U8'     │  299   │   0   │ null │  3   │ null │   1   │
+│   253   │        'landenc'         │    'U8'     │  300   │   0   │ null │  3   │ null │   1   │
+│   254   │      'plaguedoctor'      │    'U8'     │  301   │   0   │ null │  3   │ null │   1   │
+│   255   │    'curseluckshield'     │    'U8'     │  302   │   0   │ null │  3   │ null │   1   │
+│   256   │     'farthronekill'      │    'U8'     │  303   │   0   │ null │  3   │ null │   1   │
+│   257   │       'horrormark'       │    'U8'     │  304   │   0   │ null │  3   │ null │   1   │
+│   258   │         'allret'         │    'U8'     │  305   │   0   │ null │  3   │ null │   1   │
+│   259   │       'aciddigest'       │    'U8'     │  306   │   0   │ null │  3   │ null │   1   │
+│   260   │         'beckon'         │    'U8'     │  307   │   0   │ null │  3   │ null │   1   │
+│   261   │      'slaverbonus'       │    'U8'     │  308   │   0   │ null │  3   │ null │   1   │
+│   262   │    'carcasscollector'    │    'U8'     │  309   │   0   │ null │  3   │ null │   1   │
+│   263   │       'mindcollar'       │    'U8'     │  310   │   0   │ null │  3   │ null │   1   │
+│   264   │      'mountainrec'       │    'U8'     │  311   │   0   │ null │  3   │ null │   1   │
+│   265   │      'indepspells'       │    'U8'     │  312   │   0   │ null │  3   │ null │   1   │
+│   266   │      'enchrebate50'      │    'U8'     │  313   │   0   │ null │  3   │ null │   1   │
+│   267   │        'summon1'         │    'U16'    │  314   │   0   │ null │  5   │ null │   2   │
+│   268   │      'randomspell'       │    'U8'     │  316   │   0   │ null │  3   │ null │   1   │
+│   269   │        'insanify'        │    'U8'     │  317   │   0   │ null │  3   │ null │   1   │
+│   270   │        'defector'        │    'U8'     │  318   │   0   │ null │  3   │ null │   1   │
+│   271   │     'batstartsum1d3'     │    'U16'    │  319   │   0   │ null │  5   │ null │   2   │
+│   272   │      'enchrebate10'      │    'U8'     │  321   │   0   │ null │  3   │ null │   1   │
+│   273   │        'undying'         │    'U8'     │  322   │   0   │ null │  3   │ null │   1   │
+│   274   │      'moralebonus'       │    'U8'     │  323   │   0   │ null │  3   │ null │   1   │
+│   275   │  'uncurableaffliction'   │    'U32'    │  324   │   0   │ null │  7   │ null │   4   │
+│   276   │    'wintersummon1d3'     │    'U16'    │  328   │   0   │ null │  5   │ null │   2   │
+│   277   │      'stygianguide'      │    'U8'     │  330   │   0   │ null │  3   │ null │   1   │
+│   278   │       'smartmount'       │    'U8'     │  331   │   0   │ null │  3   │ null │   1   │
+│   279   │     'reformingflesh'     │    'U8'     │  332   │   0   │ null │  3   │ null │   1   │
+│   280   │     'fearoftheflood'     │    'U8'     │  333   │   0   │ null │  3   │ null │   1   │
+│   281   │     'corpsestitcher'     │    'U8'     │  334   │   0   │ null │  3   │ null │   1   │
+│   282   │     'reconstruction'     │    'U8'     │  335   │   0   │ null │  3   │ null │   1   │
+│   283   │       'nofriders'        │    'U8'     │  336   │   0   │ null │  3   │ null │   1   │
+│   284   │       'coridermnr'       │    'U16'    │  337   │   0   │ null │  5   │ null │   2   │
+│   285   │        'holycost'        │    'U8'     │  339   │   0   │ null │  3   │ null │   1   │
+│   286   │       'animatemnr'       │    'U16'    │  340   │   0   │ null │  5   │ null │   2   │
+│   287   │          'lich'          │    'U16'    │  342   │   0   │ null │  5   │ null │   2   │
+│   288   │  'erastartageincrease'   │    'U16'    │  344   │   0   │ null │  5   │ null │   2   │
+│   289   │       'moreorder'        │    'I8'     │  346   │   0   │ null │  4   │ null │   1   │
+│   290   │       'moregrowth'       │    'I8'     │  347   │   0   │ null │  4   │ null │   1   │
+│   291   │        'moreprod'        │    'I8'     │  348   │   0   │ null │  4   │ null │   1   │
+│   292   │        'moreheat'        │    'I8'     │  349   │   0   │ null │  4   │ null │   1   │
+│   293   │        'moreluck'        │    'I8'     │  350   │   0   │ null │  4   │ null │   1   │
+│   294   │       'moremagic'        │    'I8'     │  351   │   0   │ null │  4   │ null │   1   │
+│   295   │       'nofmounts'        │    'U8'     │  352   │   0   │ null │  3   │ null │   1   │
+│   296   │  'falsedamagerecovery'   │    'U8'     │  353   │   0   │ null │  3   │ null │   1   │
+│   297   │      'uwpathboost'       │    'I8'     │  354   │   0   │ null │  4   │ null │   1   │
+│   298   │      'randomitems'       │    'U16'    │  355   │   0   │ null │  5   │ null │   2   │
+│   299   │     'deathslimeexpl'     │    'U8'     │  357   │   0   │ null │  3   │ null │   1   │
+│   300   │    'deathpoisonexpl'     │    'U8'     │  358   │   0   │ null │  3   │ null │   1   │
+│   301   │     'deathshockexpl'     │    'U8'     │  359   │   0   │ null │  3   │ null │   1   │
+│   302   │        'drawsize'        │    'I8'     │  360   │   0   │ null │  4   │ null │   1   │
+│   303   │  'petrificationimmune'   │    'U8'     │  361   │   0   │ null │  3   │ null │   1   │
+│   304   │       'scarsouls'        │    'U8'     │  362   │   0   │ null │  3   │ null │   1   │
+│   305   │       'spikebarbs'       │    'U8'     │  363   │   0   │ null │  3   │ null │   1   │
+│   306   │   'pretenderstartsite'   │    'U16'    │  364   │   0   │ null │  5   │ null │   2   │
+│   307   │   'offscriptresearch'    │    'U8'     │  366   │   0   │ null │  3   │ null │   1   │
+│   308   │      'unmountedspr'      │    'U32'    │  367   │   0   │ null │  7   │ null │   4   │
+│   309   │       'exhaustion'       │    'U8'     │  371   │   0   │ null │  3   │ null │   1   │
+│   310   │          'bow'           │   'BOOL'    │  372   │   1   │  0   │  2   │  1   │ null  │
+│   311   │          'body'          │   'BOOL'    │  372   │   1   │  1   │  2   │  2   │ null  │
+│   312   │          'foot'          │   'BOOL'    │  372   │   1   │  2   │  2   │  4   │ null  │
+│   313   │       'crownonly'        │   'BOOL'    │  372   │   1   │  3   │  2   │  8   │ null  │
+│   314   │          'holy'          │   'BOOL'    │  372   │   1   │  4   │  2   │  16  │ null  │
+│   315   │       'inquisitor'       │   'BOOL'    │  372   │   1   │  5   │  2   │  32  │ null  │
+│   316   │       'inanimate'        │   'BOOL'    │  372   │   1   │  6   │  2   │  64  │ null  │
+│   317   │         'undead'         │   'BOOL'    │  372   │   1   │  7   │  2   │ 128  │ null  │
+│   318   │         'demon'          │   'BOOL'    │  373   │   1   │  8   │  2   │  1   │ null  │
+│   319   │       'magicbeing'       │   'BOOL'    │  373   │   1   │  9   │  2   │  2   │ null  │
+│   320   │       'stonebeing'       │   'BOOL'    │  373   │   1   │  10  │  2   │  4   │ null  │
+│   321   │         'animal'         │   'BOOL'    │  373   │   1   │  11  │  2   │  8   │ null  │
+│   322   │       'coldblood'        │   'BOOL'    │  373   │   1   │  12  │  2   │  16  │ null  │
+│   323   │         'female'         │   'BOOL'    │  373   │   1   │  13  │  2   │  32  │ null  │
+│   324   │     'forestsurvival'     │   'BOOL'    │  373   │   1   │  14  │  2   │  64  │ null  │
+│   325   │    'mountainsurvival'    │   'BOOL'    │  373   │   1   │  15  │  2   │ 128  │ null  │
+│   326   │     'wastesurvival'      │   'BOOL'    │  374   │   1   │  16  │  2   │  1   │ null  │
+│   327   │     'swampsurvival'      │   'BOOL'    │  374   │   1   │  17  │  2   │  2   │ null  │
+│   328   │        'aquatic'         │   'BOOL'    │  374   │   1   │  18  │  2   │  4   │ null  │
+│   329   │       'amphibian'        │   'BOOL'    │  374   │   1   │  19  │  2   │  8   │ null  │
+│   330   │     'pooramphibian'      │   'BOOL'    │  374   │   1   │  20  │  2   │  16  │ null  │
+│   331   │         'float'          │   'BOOL'    │  374   │   1   │  21  │  2   │  32  │ null  │
+│   332   │         'flying'         │   'BOOL'    │  374   │   1   │  22  │  2   │  64  │ null  │
+│   333   │      'stormimmune'       │   'BOOL'    │  374   │   1   │  23  │  2   │ 128  │ null  │
+│   334   │        'teleport'        │   'BOOL'    │  375   │   1   │  24  │  2   │  1   │ null  │
+│   335   │        'immobile'        │   'BOOL'    │  375   │   1   │  25  │  2   │  2   │ null  │
+│   336   │      'noriverpass'       │   'BOOL'    │  375   │   1   │  26  │  2   │  4   │ null  │
+│   337   │        'illusion'        │   'BOOL'    │  375   │   1   │  27  │  2   │  8   │ null  │
+│   338   │          'spy'           │   'BOOL'    │  375   │   1   │  28  │  2   │  16  │ null  │
+│   339   │        'assassin'        │   'BOOL'    │  375   │   1   │  29  │  2   │  32  │ null  │
+│   340   │          'heal'          │   'BOOL'    │  375   │   1   │  30  │  2   │  64  │ null  │
+│   341   │        'immortal'        │   'BOOL'    │  375   │   1   │  31  │  2   │ 128  │ null  │
+│   342   │      'domimmortal'       │   'BOOL'    │  376   │   1   │  32  │  2   │  1   │ null  │
+│   343   │         'noheal'         │   'BOOL'    │  376   │   1   │  33  │  2   │  2   │ null  │
+│   344   │       'neednoteat'       │   'BOOL'    │  376   │   1   │  34  │  2   │  4   │ null  │
+│   345   │     'undisciplined'      │   'BOOL'    │  376   │   1   │  35  │  2   │  8   │ null  │
+│   346   │         'slave'          │   'BOOL'    │  376   │   1   │  36  │  2   │  16  │ null  │
+│   347   │        'slashres'        │   'BOOL'    │  376   │   1   │  37  │  2   │  32  │ null  │
+│   348   │        'bluntres'        │   'BOOL'    │  376   │   1   │  38  │  2   │  64  │ null  │
+│   349   │       'pierceres'        │   'BOOL'    │  376   │   1   │  39  │  2   │ 128  │ null  │
+│   350   │         'blind'          │   'BOOL'    │  377   │   1   │  40  │  2   │  1   │ null  │
+│   351   │        'petrify'         │   'BOOL'    │  377   │   1   │  41  │  2   │  2   │ null  │
+│   352   │        'ethereal'        │   'BOOL'    │  377   │   1   │  42  │  2   │  4   │ null  │
+│   353   │       'deathcurse'       │   'BOOL'    │  377   │   1   │  43  │  2   │  8   │ null  │
+│   354   │        'trample'         │   'BOOL'    │  377   │   1   │  44  │  2   │  16  │ null  │
+│   355   │      'trampswallow'      │   'BOOL'    │  377   │   1   │  45  │  2   │  32  │ null  │
+│   356   │      'taxcollector'      │   'BOOL'    │  377   │   1   │  46  │  2   │  64  │ null  │
+│   357   │      'drainimmune'       │   'BOOL'    │  377   │   1   │  47  │  2   │ 128  │ null  │
+│   358   │         'unique'         │   'BOOL'    │  378   │   1   │  48  │  2   │  1   │ null  │
+│   359   │       'scalewalls'       │   'BOOL'    │  378   │   1   │  49  │  2   │  2   │ null  │
+│   360   │       'divineins'        │   'BOOL'    │  378   │   1   │  50  │  2   │  4   │ null  │
+│   361   │        'heatrec'         │   'BOOL'    │  378   │   1   │  51  │  2   │  8   │ null  │
+│   362   │        'coldrec'         │   'BOOL'    │  378   │   1   │  52  │  2   │  16  │ null  │
+│   363   │      'spreadchaos'       │   'BOOL'    │  378   │   1   │  53  │  2   │  32  │ null  │
+│   364   │      'spreaddeath'       │   'BOOL'    │  378   │   1   │  54  │  2   │  64  │ null  │
+│   365   │          'bug'           │   'BOOL'    │  378   │   1   │  55  │  2   │ 128  │ null  │
+│   366   │         'uwbug'          │   'BOOL'    │  379   │   1   │  56  │  2   │  1   │ null  │
+│   367   │      'spreadorder'       │   'BOOL'    │  379   │   1   │  57  │  2   │  2   │ null  │
+│   368   │      'spreadgrowth'      │   'BOOL'    │  379   │   1   │  58  │  2   │  4   │ null  │
+│   369   │       'spreaddom'        │   'BOOL'    │  379   │   1   │  59  │  2   │  8   │ null  │
+│   370   │         'drake'          │   'BOOL'    │  379   │   1   │  60  │  2   │  16  │ null  │
+│   371   │    'theftofthesunawe'    │   'BOOL'    │  379   │   1   │  61  │  2   │  32  │ null  │
+│   372   │       'dragonlord'       │   'BOOL'    │  379   │   1   │  62  │  2   │  64  │ null  │
+│   373   │       'mindvessel'       │   'BOOL'    │  379   │   1   │  63  │  2   │ 128  │ null  │
+│   374   │      'elementrange'      │   'BOOL'    │  380   │   1   │  64  │  2   │  1   │ null  │
+│   375   │     'astralfetters'      │   'BOOL'    │  380   │   1   │  65  │  2   │  2   │ null  │
+│   376   │      'combatcaster'      │   'BOOL'    │  380   │   1   │  66  │  2   │  4   │ null  │
+│   377   │      'aisinglerec'       │   'BOOL'    │  380   │   1   │  67  │  2   │  8   │ null  │
+│   378   │         'nowish'         │   'BOOL'    │  380   │   1   │  68  │  2   │  16  │ null  │
+│   379   │         'mason'          │   'BOOL'    │  380   │   1   │  69  │  2   │  32  │ null  │
+│   380   │      'spiritsight'       │   'BOOL'    │  380   │   1   │  70  │  2   │  64  │ null  │
+│   381   │        'ownblood'        │   'BOOL'    │  380   │   1   │  71  │  2   │ 128  │ null  │
+│   382   │       'invisible'        │   'BOOL'    │  381   │   1   │  72  │  2   │  1   │ null  │
+│   383   │      'spellsinger'       │   'BOOL'    │  381   │   1   │  73  │  2   │  2   │ null  │
+│   384   │       'magicstudy'       │   'BOOL'    │  381   │   1   │  74  │  2   │  4   │ null  │
+│   385   │         'unify'          │   'BOOL'    │  381   │   1   │  75  │  2   │  8   │ null  │
+│   386   │       'triple3mon'       │   'BOOL'    │  381   │   1   │  76  │  2   │  16  │ null  │
+│   387   │        'yearturn'        │   'BOOL'    │  381   │   1   │  77  │  2   │  32  │ null  │
+│   388   │     'unteleportable'     │   'BOOL'    │  381   │   1   │  78  │  2   │  64  │ null  │
+│   389   │      'reanimpriest'      │   'BOOL'    │  381   │   1   │  79  │  2   │ 128  │ null  │
+│   390   │      'stunimmunity'      │   'BOOL'    │  382   │   1   │  80  │  2   │  1   │ null  │
+│   391   │      'singlebattle'      │   'BOOL'    │  382   │   1   │  81  │  2   │  2   │ null  │
+│   392   │  'researchwithoutmagic'  │   'BOOL'    │  382   │   1   │  82  │  2   │  4   │ null  │
+│   393   │      'autocompete'       │   'BOOL'    │  382   │   1   │  83  │  2   │  8   │ null  │
+│   394   │      'adventurers'       │   'BOOL'    │  382   │   1   │  84  │  2   │  16  │ null  │
+│   395   │       'cleanshape'       │   'BOOL'    │  382   │   1   │  85  │  2   │  32  │ null  │
+│   396   │         'reqlab'         │   'BOOL'    │  382   │   1   │  86  │  2   │  64  │ null  │
+│   397   │       'reqtemple'        │   'BOOL'    │  382   │   1   │  87  │  2   │ 128  │ null  │
+│   398   │      'horrormarked'      │   'BOOL'    │  383   │   1   │  88  │  2   │  1   │ null  │
+│   399   │        'isashah'         │   'BOOL'    │  383   │   1   │  89  │  2   │  2   │ null  │
+│   400   │        'isayazad'        │   'BOOL'    │  383   │   1   │  90  │  2   │  4   │ null  │
+│   401   │        'isadaeva'        │   'BOOL'    │  383   │   1   │  91  │  2   │  8   │ null  │
+│   402   │        'blessfly'        │   'BOOL'    │  383   │   1   │  92  │  2   │  16  │ null  │
+│   403   │         'plant'          │   'BOOL'    │  383   │   1   │  93  │  2   │  32  │ null  │
+│   404   │        'comslave'        │   'BOOL'    │  383   │   1   │  94  │  2   │  64  │ null  │
+│   405   │        'snowmove'        │   'BOOL'    │  383   │   1   │  95  │  2   │ 128  │ null  │
+│   406   │        'swimming'        │   'BOOL'    │  384   │   1   │  96  │  2   │  1   │ null  │
+│   407   │         'stupid'         │   'BOOL'    │  384   │   1   │  97  │  2   │  2   │ null  │
+│   408   │       'skirmisher'       │   'BOOL'    │  384   │   1   │  98  │  2   │  4   │ null  │
+│   409   │         'unseen'         │   'BOOL'    │  384   │   1   │  99  │  2   │  8   │ null  │
+│   410   │       'nomovepen'        │   'BOOL'    │  384   │   1   │ 100  │  2   │  16  │ null  │
+│   411   │          'wolf'          │   'BOOL'    │  384   │   1   │ 101  │  2   │  32  │ null  │
+│   412   │        'dungeon'         │   'BOOL'    │  384   │   1   │ 102  │  2   │  64  │ null  │
+│   413   │        'aboleth'         │   'BOOL'    │  384   │   1   │ 103  │  2   │ 128  │ null  │
+│   414   │        'localsun'        │   'BOOL'    │  385   │   1   │ 104  │  2   │  1   │ null  │
+│   415   │      'tmpfiregems'       │   'BOOL'    │  385   │   1   │ 105  │  2   │  2   │ null  │
+│   416   │        'defiler'         │   'BOOL'    │  385   │   1   │ 106  │  2   │  4   │ null  │
+│   417   │     'mountedbeserk'      │   'BOOL'    │  385   │   1   │ 107  │  2   │  8   │ null  │
+│   418   │        'lanceok'         │   'BOOL'    │  385   │   1   │ 108  │  2   │  16  │ null  │
+│   419   │       'minprison'        │   'BOOL'    │  385   │   1   │ 109  │  2   │  32  │ null  │
+│   420   │       'hpoverflow'       │   'BOOL'    │  385   │   1   │ 110  │  2   │  64  │ null  │
+│   421   │       'indepstay'        │   'BOOL'    │  385   │   1   │ 111  │  2   │ 128  │ null  │
+│   422   │       'polyimmune'       │   'BOOL'    │  386   │   1   │ 112  │  2   │  1   │ null  │
+│   423   │        'norange'         │   'BOOL'    │  386   │   1   │ 113  │  2   │  2   │ null  │
+│   424   │         'nohof'          │   'BOOL'    │  386   │   1   │ 114  │  2   │  4   │ null  │
+│   425   │      'autoblessed'       │   'BOOL'    │  386   │   1   │ 115  │  2   │  8   │ null  │
+│   426   │      'almostundead'      │   'BOOL'    │  386   │   1   │ 116  │  2   │  16  │ null  │
+│   427   │       'truesight'        │   'BOOL'    │  386   │   1   │ 117  │  2   │  32  │ null  │
+│   428   │      'mobilearcher'      │   'BOOL'    │  386   │   1   │ 118  │  2   │  64  │ null  │
+│   429   │       'spiritform'       │   'BOOL'    │  386   │   1   │ 119  │  2   │ 128  │ null  │
+│   430   │      'chorusslave'       │   'BOOL'    │  387   │   1   │ 120  │  2   │  1   │ null  │
+│   431   │      'chorusmaster'      │   'BOOL'    │  387   │   1   │ 121  │  2   │  2   │ null  │
+│   432   │       'tightrein'        │   'BOOL'    │  387   │   1   │ 122  │  2   │  4   │ null  │
+│   433   │       'glamourman'       │   'BOOL'    │  387   │   1   │ 123  │  2   │  8   │ null  │
+│   434   │      'divinebeing'       │   'BOOL'    │  387   │   1   │ 124  │  2   │  16  │ null  │
+│   435   │       'nofalldmg'        │   'BOOL'    │  387   │   1   │ 125  │  2   │  32  │ null  │
+│   436   │      'fireempower'       │   'BOOL'    │  387   │   1   │ 126  │  2   │  64  │ null  │
+│   437   │       'airempower'       │   'BOOL'    │  387   │   1   │ 127  │  2   │ 128  │ null  │
+│   438   │      'waterempower'      │   'BOOL'    │  388   │   1   │ 128  │  2   │  1   │ null  │
+│   439   │      'earthempower'      │   'BOOL'    │  388   │   1   │ 129  │  2   │  2   │ null  │
+│   440   │         'popspy'         │   'BOOL'    │  388   │   1   │ 130  │  2   │  4   │ null  │
+│   441   │      'capitalhome'       │   'BOOL'    │  388   │   1   │ 131  │  2   │  8   │ null  │
+│   442   │         'clumsy'         │   'BOOL'    │  388   │   1   │ 132  │  2   │  16  │ null  │
+│   443   │      'regainmount'       │   'BOOL'    │  388   │   1   │ 133  │  2   │  32  │ null  │
+│   444   │       'nobarding'        │   'BOOL'    │  388   │   1   │ 134  │  2   │  64  │ null  │
+│   445   │       'mountiscom'       │   'BOOL'    │  388   │   1   │ 135  │  2   │ 128  │ null  │
+│   446   │       'nothrowoff'       │   'BOOL'    │  389   │   1   │ 136  │  2   │  1   │ null  │
+│   447   │          'bird'          │   'BOOL'    │  389   │   1   │ 137  │  2   │  2   │ null  │
+│   448   │        'decayres'        │   'BOOL'    │  389   │   1   │ 138  │  2   │  4   │ null  │
+│   449   │       'cubmother'        │   'BOOL'    │  389   │   1   │ 139  │  2   │  8   │ null  │
+│   450   │        'glamour'         │   'BOOL'    │  389   │   1   │ 140  │  2   │  16  │ null  │
+│   451   │          'name'          │  'STRING'   │  null  │   3   │ null │  1   │ null │ null  │
+│   452   │        'gemprod'         │  'STRING'   │  null  │   3   │ null │  1   │ null │ null  │
+│   453   │       'fixedname'        │  'STRING'   │  null  │   3   │ null │  1   │ null │ null  │
+│   454   │         'armor'          │ 'I16_ARRAY' │   0    │   0   │ null │  21  │ null │   2   │
+│   455   │        'weapons'         │ 'I16_ARRAY' │   0    │   0   │ null │  21  │ null │   2   │
+│   456   │      '&custommagic'      │ 'I32_ARRAY' │   0    │   0   │ null │  23  │ null │   4   │
+└─────────┴──────────────────────────┴─────────────┴────────┴───────┴──────┴──────┴──────┴───────┘
+╚══════════════════════════════════════════════════════════════════════════════╝
+wait....
+
+
+
+===== READ 3979 OF Unit =====

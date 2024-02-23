@@ -1,40 +1,40 @@
 <script setup lang="ts">
 import type { FTColumn } from './column';
+import { computed } from 'vue';
+import { useStore } from './store';
 import FullRow from './FullRow.vue';
 
-const props = defineProps<{
-  name: string,
-  rows: any[],
-  columns: FTColumn[],
-  rowKey: string,
-}>();
-
-console.log('FT COLUMNS', props.columns);
+const props = defineProps<{ tableName: string; }>();
+const store = useStore();
+const table = computed(() => store.db?.tables[props.tableName] ?? null);
+const columns = computed(() => store.columns[props.tableName])
 </script>
 
 <template>
-  <table class="full-table">
+  <table v-if="table" table class="full-table">
     <thead>
       <th
-        v-for="col of columns"
+        v-for="col of store.columns[table.name]"
         :key="col.key"
       >
         <component
           v-if="col.labelComponent"
           :is="col.labelComponent"
           :col="col"
-          :table-name="name"
+          :table-name="table.name"
         />
-        <span v-else="">{{ col.labelText }}</span>
+        <span v-else>
+          {{ col.labelText }}
+        </span>
       </th>
     </thead>
     <tbody>
       <FullRow
-        v-for="row of rows"
-        :table-name="name"
-        :key="rowKey"
-        :row="row"
+        v-for="item of table.items"
+        :table-name="table.name"
+        :key="table.rowKey"
         :columns="columns"
+        :item="item"
       />
     </tbody>
   </table>
@@ -44,15 +44,23 @@ console.log('FT COLUMNS', props.columns);
   .full-table {
     border-spacing: 0;
     width: 100%;
-  }
-  .full-table > thead {
-    position: sticky;
-    background-color: #222;
-    top: 0;
-  }
-  .full-table th, .full-table td {
-    padding: 4px;
-    border: 1px solid var(--se-color);
+    & > thead {
+      position: sticky;
+      background-color: #222;
+      top: 0;
+    }
+    & th {
+      padding: 4px;
+      border: 1px solid var(--se-color);
+      text-align: left;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    & td {
+      padding: 4px;
+      border: 1px solid var(--se-color);
+    }
   }
 </style>
 

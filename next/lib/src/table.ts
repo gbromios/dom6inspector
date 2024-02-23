@@ -1,7 +1,7 @@
 import { Schema } from './schema';
 import { tableDeco } from './util';
-export type RowData = string[];
-export type Row = Record<string, boolean|number|string|bigint> & { __rowId: number };
+export type RowData = string|number|boolean|bigint|(string|number|bigint)[];
+export type Row = Record<string, RowData> & { __rowId: number };
 
 type TableBlob = { numRows: number, headerBlob: Blob, dataBlob: Blob };
 

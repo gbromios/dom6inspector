@@ -2,38 +2,30 @@
 import type { FTColumn } from './column';
 import { computed } from 'vue';
 
-const props = defineProps<{
+defineProps<{
   tableName: string,
   columns: FTColumn[],
-  row: T,
+  item: T,
 }>();
 
-const data = computed(() => {
-  const item = props.row;
-  return props.columns.map((col: FTColumn) => ({
-    col,
-    key: col.key,
-    itemComponent: col.itemComponent,
-    text: (col.getItemText ? col.getItemText(item) : item[col.key]) ?? null,
-  }));
-});
+//const text = computed(() => )
 
 </script>
 
 <template>
   <tr>
-    <td v-for="{ col, key, itemComponent, text } of data" :key="key">
+    <td v-for="col of columns" :key="col.key">
       <component
-        v-if="itemComponent"
-        :is="itemComponent"
-        :item="row"
+        v-if="col.itemComponent"
+        :key="col.key"
+        :is="col.itemComponent"
+        :item="item"
         :col="col"
-        :key="key"
         :table-name="tableName"
       />
-      <p v-else-if="text != null">
-        {{ text }}
-      </p>
+      <span v-else="text != null">
+        {{ col.getItemText(item) }}
+      </span>
     </td>
   </tr>
 </template>

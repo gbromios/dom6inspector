@@ -5,8 +5,8 @@ import {
   Schema,
   Table,
   COLUMN,
-  cmpFields,
   argsFromText,
+  argsFromType,
   ColumnArgs,
   fromArgs
 } from 'dom6inspector-next-lib';
@@ -31,13 +31,20 @@ export async function readCSV (
   }
 }
 
+type CreateExtraField = (
+  index: number,
+  a: SchemaArgs,
+  name: string,
+  override?: (...args: any[]) => any,
+) => ColumnArgs;
+
 export type ParseSchemaOptions = {
   name?: string,
   ignoreFields: Set<string>;
   separator: string;
-  overrides: Record<string, (v: any) => any>;
-  knownFields: Record<string, Omit<ColumnArgs, 'index'>>,
-  extraFields: Record<string, (name: string, a: SchemaArgs) => ColumnArgs>,
+  overrides: Record<string, (...args: any[]) => any>;
+  knownFields: Record<string, COLUMN>,
+  extraFields: Record<string, CreateExtraField>,
 }
 
 const DEFAULT_OPTIONS: ParseSchemaOptions = {
@@ -59,6 +66,7 @@ export function csvToTable(
     columns: [],
     fields: [],
     rawFields: {},
+    overrides: _opts.overrides,
   };
 
   if (raw.indexOf('\0') !== -1) throw new Error('uh oh')
@@ -81,37 +89,61 @@ export function csvToTable(
   }
 
   const rawColumns: ColumnArgs[] = [];
-
   for (const [index, name] of rawFields.entries()) {
+    let c: null | ColumnArgs = null;
     schemaArgs.rawFields[name] = index;
     if (_opts.ignoreFields?.has(name)) continue;
-    if (_opts.knownFields[name])
-    try {
-      const c = argsFromText(
+    if (_opts.knownFields[name]) {
+      c = argsFromType(
         name,
+        _opts.knownFields[name],
         index,
-        schemaArgs.flagsUsed,
-        rawData,
-        _opts.overrides[name],
         schemaArgs,
-      );
-      if (c !== null) {
-        if (c.type === COLUMN.BOOL) schemaArgs.flagsUsed++;
-        rawColumns.push(c);
+      )
+    } else {
+      try {
+        c = argsFromText(
+          name,
+          index,
+          schemaArgs,
+          rawData,
+        );
+      } catch (ex) {
+        console.error(
+          `GOOB INTERCEPTED IN ${schemaArgs.name}: \x1b[31m${index}:${name}\x1b[0m`,
+            ex
+        );
+        throw ex
       }
-    } catch (ex) {
-      console.error(
-        `GOOB INTERCEPTED IN ${schemaArgs.name}: \x1b[31m${index}:${name}\x1b[0m`,
-          ex
-      );
-      throw ex
+    }
+    if (c !== null) {
+      if (c.type === COLUMN.BOOL) schemaArgs.flagsUsed++;
+      rawColumns.push(c);
     }
   }
 
   if (options?.extraFields) {
-    for (const [name, getField] of Object.entries(options.extraFields)) {
-      rawColumns.push(getField(name, schemaArgs));
-    }
+    const bi = Object.values(schemaArgs.rawFields).length; // hmmmm
+    rawColumns.push(...Object.entries(options.extraFields).map(
+      ([name, createColumn]: [string, CreateExtraField], ei: number) => {
+        const override = schemaArgs.overrides[name];
+        //console.log(ei, schemaArgs.rawFields)
+        const index = bi + ei;
+        const ca = createColumn(index, schemaArgs, name, override);
+        try {
+          if (ca.index !== index) throw new Error('wiseguy picked his own index');
+          if (ca.name !== name) throw new Error('wiseguy picked his own name');
+          if (ca.type === COLUMN.BOOL) {
+            if (ca.bit !== schemaArgs.flagsUsed) throw new Error('piss baby idiot');
+            schemaArgs.flagsUsed++;
+          }
+        } catch (ex) {
+          console.log(ca, { index, override, name, })
+          throw ex;
+        }
+        return ca;
+      })
+    );
   }
 
   const data: Row[] = new Array(rawData.length)
@@ -129,7 +161,7 @@ export function csvToTable(
     for (const r of data)
       data[r.__rowId][col.name] = col.fromText(
         rawData[r.__rowId][col.index],
-        r,
+        rawData[r.__rowId],
         schemaArgs,
       );
   }

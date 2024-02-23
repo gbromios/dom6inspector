@@ -1,6 +1,25 @@
 import type { DB } from './load';
 import { createDB, fetchTables } from './create';
 import { loadDB } from './load';
+import { FTColumn } from '@/column';
+
+export type StoreTable = {
+  db: IDBDatabase;
+  name: string;
+  columns: FTColumn[];
+  defaults: Set<string>;
+  readonly rowKey: string;
+  rows: any[]; // raw data, honestly could get rid of it
+  items: any[]; // processed data (in store etc)
+};
+
+export type DB = {
+  readonly version: number;
+  readonly idb: IDBDatabase;
+  readonly tables: Record<string, StoreTable>;
+};
+
+
 
 let _dbPromise: Promise<DB>|null = null;
 window._KILLDB = () => {
@@ -12,7 +31,7 @@ export function useDB (
   version: number = CURRENT_VERSION,
   status: (...args: any[]) => void,
 ): Promise<any> {
-  return _dbPromise ??= new Promise<IDBDatabase>((resolve, reject) => {
+  return _dbPromise ??= new Promise<DB>((resolve, reject) => {
     let noUpgradeNeeded = true;
     if (!globalThis.indexedDB)
       return reject('browser does not supported IndexedDB');
@@ -31,12 +50,15 @@ export function useDB (
       // what does a null newVersion even mean???
       console.log('upgradeneeded', e)
       noUpgradeNeeded = false;
-      const db = await createDB(
-        e.oldVersion,
-        e.newVersion!,
-        openRequest.result
-      )
-      resolve(db)
+      resolve({
+        tables: await createDB(
+          e.oldVersion,
+          e.newVersion!,
+          openRequest.result
+        ),
+        version: CURRENT_VERSION,
+        idb: openRequest.result,
+      })
 
     });
 
@@ -44,8 +66,8 @@ export function useDB (
       if (noUpgradeNeeded) {
         console.log('loaded db from indexedDB');
         void fetchTables(CURRENT_VERSION); // for console inspection
-        resolve(openRequest.result);
+        resolve(loadDB(openRequest.result, CURRENT_VERSION));
       }
     });
-  }).then(idb => loadDB(idb, CURRENT_VERSION));
+  });
 }
