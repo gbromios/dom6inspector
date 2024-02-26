@@ -20,7 +20,7 @@ const columns = computed(() => store.columns[props.tableName])
         <component
           v-if="col.labelComponent"
           :is="col.labelComponent"
-          :col="col"
+          :column="col"
           :table-name="table.name"
         />
         <span v-else>
@@ -41,26 +41,46 @@ const columns = computed(() => store.columns[props.tableName])
 </template>
 
 <style lang="less">
-  .full-table {
+  table {
     border-spacing: 0;
-    width: 100%;
+  }
+  .full-table {
+    //width: 100%;
     & > thead {
       position: sticky;
+      z-index: 50;
       background-color: #222;
       top: 0;
     }
-    & th {
+    & > tbody {
+      position: relative;
+    }
+    tr {
+      &:nth-child(even) {
+        background-color: rgba(255,255,255,0.025);
+      }
+    }
+
+  }
+
+  body[data-v-app] {
+    th {
       padding: 4px;
       border: 1px solid var(--se-color);
       text-align: left;
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
+      user-select: none;
+      position: relative;
     }
-    & td {
+    td {
+      position: relative;
       padding: 4px;
       border: 1px solid var(--se-color);
     }
+
   }
+
 </style>
 

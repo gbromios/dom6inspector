@@ -1,6 +1,7 @@
 import { markRaw } from 'vue';
 import type { FTColumn } from '../column';
-import { rawValue } from '../column';
+import { boolValue, rawValue } from '../column';
+import MagicPathsVue from '../MagicPaths.vue'
 
 export const rowKey: string = 'id';
 
@@ -39,7 +40,11 @@ export const columns: FTColumn[] = [
   rawValue('body'),
   rawValue('foot'),
   rawValue('crownonly'),
-  rawValue('holy'),
+  boolValue({
+    key: 'holy',
+    labelText: 'Sacred',
+    labelIcon: 'sacred',
+  }),
   rawValue('inquisitor'),
   rawValue('inanimate'),
   rawValue('undead'),
@@ -181,18 +186,22 @@ export const columns: FTColumn[] = [
     labelText: 'Custom Magic',
     getItemValue (item: any, row: any) {
       if (!item['&custommagic']?.length) return null; // who care
-      const cms: any[] & { lvl: number } = Object.assign([], { lvl: 0 });
+      const cms = { spec: [] as any[], lvl: 0 }
       for (const p of item['&custommagic']) {
         const mask = (p & 1023) << 7;
         const count = (p >>> 10) & 63;
-        const chance = (p >>> 16);
+        const strength = (p >>> 16);
         const paths = maskToPaths(mask);
         for (let i = 0; i < count; i++) {
-          cms.push({ chance, paths });
-          cms.lvl += chance / 100;
+          cms.lvl += strength / 100;
+          cms.spec.push({
+            chance: Math.min(strength, 100),
+            lvl: Math.max(strength / 100, 1),
+            paths
+          });
         }
       }
-      return cms.length ? cms : null;
+      return cms.spec.length ? cms : null;
     },
     getItemText (r: any) {
       return r.custommagic ? Math.round(r.custommagic.lvl) : null;
@@ -202,6 +211,7 @@ export const columns: FTColumn[] = [
     key: 'magicpaths',
     labelText: 'Magic Paths',
     getItemValue: MagicLevels,
+    itemComponent: MagicPathsVue,
     getItemText (item: any) {
       // TODO - component~
       if (!item.magicpaths) return null;
@@ -216,10 +226,15 @@ export const columns: FTColumn[] = [
     labelText: `Research Ability`,
     getItemValue (item: any, row: any) {
       if (item.fixedresearch) return item.fixedresearch;
-      const mlvl: Record<string, number> = item.magicpaths;
+      const mlvl: Record<string, number> = row.magicpaths;
       if (!mlvl) return 0;
       const base = 5 + item.researchbonus;
-      return Object.values(mlvl).reduce((ra, ml) => ra + ml * 2, base);
+      let rv = Object.values(mlvl).reduce((ra, ml) => ra + ml * 2, base);
+      if (mlvl.H) {
+        // TODO - dont forget about divine inspired thingy or whatever
+        rv -= mlvl.H * 2;
+      }
+      return rv;
     },
     getItemText (r: any) { return `${r.research}` }
   },
@@ -249,7 +264,7 @@ function MagicLevels (src?: any|number, lvl?: any): Record<string, number>|null 
     }));
     if (lvl.custommagic) {
       hasMagic = true;
-      lvls['?'] = Math.round(lvl.custommagic.lvl);
+      lvls['U'] = Math.round(lvl.custommagic.lvl);
     }
   }
   //console.log('MAGIC LEVELS', src?.id, { lvls })
@@ -282,7 +297,7 @@ function maskToPaths (mask: number): string[] {
 export const defaults = new Set<string>([
   'id', 'name',
   //...'FAWESDNGB'
-  'custommagic',
+  'holy',
   'magicpaths',
 ])
 

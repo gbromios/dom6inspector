@@ -35,7 +35,7 @@
   .scroll-wrapper {
     flex: 0 0 100%;
     min-height: 0;
-    overflow-y: overlay;
+    overflow-y: scroll;
   }
   .fatal-error {
     color: var(--hl-color);
