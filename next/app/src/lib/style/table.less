@@ -1,0 +1,79 @@
+.ft-table {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  --row-h: 2em;
+  width: 930px;
+  overflow-x: auto;
+  min-width: 0;
+}
+
+.ft-head {
+  flex: 0 0 var(--row-h);
+  background-color: #222;
+  top: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+  scrollbar-gutter: stable;
+  overflow-y: auto; // lol ok
+  //border-right: solid 15px var(--se-color);
+}
+
+.ft-col {
+  height: var(--row-h);
+  display: flex;
+  align-items: center;
+  min-width: 0;
+
+  border: 1px solid var(--se-color);
+  text-align: left;
+  font-weight: bold;
+
+  user-select: none;
+  position: relative;
+
+  & > span.text {
+    padding: 0 4px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
+
+.ft-body {
+  flex: 1 1 100%;
+  min-height: 0;
+  overflow-y: overlay;
+  scrollbar-gutter: stable;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.ft-row {
+  flex: 0 0 var(--row-h);
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+
+  &:nth-child(even) { background-color: rgba(255,255,255,0.025); }
+}
+
+.ft-data {
+  height: var(--row-h);
+  position: relative;
+  border: 1px solid var(--se-color);
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  & > span.text {
+    padding: 0 4px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+}
+
