@@ -15,6 +15,7 @@ import { tableDeco } from './util';
 
 export type SchemaArgs = {
   name: string;
+  key: string;
   columns: Column[],
   fields: string[],
   flagsUsed: number;
@@ -28,13 +29,15 @@ export class Schema {
   readonly name: string;
   readonly columns: Readonly<Column[]>;
   readonly fields: Readonly<string[]>;
+  readonly key: string;
   readonly columnsByName: Record<string, Column>;
   readonly fixedWidth: number; // total bytes used by numbers + flags
   readonly flagFields: number;
   readonly stringFields: number;
   readonly bigFields: number;
-  constructor({ columns, name, flagsUsed }: SchemaArgs) {
+  constructor({ columns, name, flagsUsed, key }: SchemaArgs) {
     this.name = name;
+    this.key = key;
     this.columns = [...columns].sort(cmpFields);
     this.fields = this.columns.map(c => c.name);
     this.columnsByName = Object.fromEntries(this.columns.map(c => [c.name, c]));
@@ -125,12 +128,16 @@ export class Schema {
     let i = 0;
     let read: number;
     let name: string;
+    let key: string;
     const bytes = new Uint8Array(buffer);
     [name, read] = bytesToString(i, bytes);
+    i += read;
+    [key, read] = bytesToString(i, bytes);
     i += read;
 
     const args = {
       name,
+      key,
       columns: [] as Column[],
       fields: [] as string[],
       flagsUsed: 0,
@@ -199,6 +206,7 @@ export class Schema {
     const view = new DataView(buffer);
     const row: Row = { __rowId }
     const lastBit = this.flagFields - 1;
+
     for (const c of this.columns) {
       //if (c.offset && c.offset !== totalRead) { debugger; console.log('woopsie'); }
       let [v, read] = c.isArray ?
@@ -210,7 +218,8 @@ export class Schema {
 
       i += read;
       totalRead += read;
-      row[c.name] = v;
+      // don't put falsy values on final objects. may revisit how this works later
+      if (c.isArray || v) row[c.name] = v;
       //const w = globalThis._ROWS[this.name][__rowId][c.name] // srs biz
       /*
       if (w !== v) {
@@ -239,6 +248,7 @@ export class Schema {
     if (this.columns.length > 65535) throw new Error('oh buddy...');
     const parts = new Uint8Array([
       ...stringToBytes(this.name),
+      ...stringToBytes(this.key),
       this.columns.length & 255,
       (this.columns.length >>> 8),
       ...this.columns.flatMap(c => c.serialize())

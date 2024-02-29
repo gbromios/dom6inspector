@@ -6,11 +6,19 @@ export type Row = Record<string, RowData> & { __rowId: number };
 type TableBlob = { numRows: number, headerBlob: Blob, dataBlob: Blob };
 
 export class Table {
-  get name (): string { return `[TABLE:${this.schema.name}]`; }
+  get name (): string { return this.schema.name }
+  get key (): string { return this.schema.key }
+  readonly map: Map<any, any> = new Map()
   constructor (
     readonly rows: Row[],
     readonly schema: Schema,
   ) {
+    const keyName = this.key;
+    if (keyName !== '__rowId') for (const row of this.rows) {
+      const key = row[keyName];
+      if (this.map.has(key)) throw new Error('key is not unique');
+      this.map.set(key, row);
+    }
   }
 
   serialize (): [Uint32Array, Blob, Blob] {
@@ -19,6 +27,7 @@ export class Table {
     // cant figure out how to do this with bits :'<
     const schemaPadding = (4 - schemaHeader.size % 4) % 4;
     const rowData = this.rows.flatMap(r => this.schema.serializeRow(r));
+
     //const rowData = this.rows.flatMap(r => {
       //const rowBlob = this.schema.serializeRow(r)
       //if (r.__rowId === 0)
@@ -119,21 +128,35 @@ export class Table {
     width: number = 80,
     fields: Readonly<string[]>|null = null,
     n: number|null = null,
-    m: number|null = null
-  ): void {
+    m: number|null = null,
+    p?: (r: any) => boolean,
+  ): null|any[] {
     const [head, tail] = tableDeco(this.name, width, 18);
-    const rows = n === null ? this.rows :
+    const rows = p ? this.rows.filter(p) :
+      n === null ? this.rows :
       m === null ? this.rows.slice(0, n) :
       this.rows.slice(n, m);
 
+
+    let mFields = Array.from((fields ?? this.schema.fields));
+    if (p) [n, m] = [0, rows.length]
+    else (mFields as any).unshift('__rowId');
+
     const [pRows, pFields] = fields ?
-      [rows.map((r: Row) => this.schema.printRow(r, fields)), fields]:
+      [rows.map((r: Row) => this.schema.printRow(r, mFields)), fields]:
       [rows, this.schema.fields]
       ;
 
+    console.log('row filter:', p ?? '(none)')
+    console.log(`(view rows ${n} - ${m})`);
     console.log(head);
     console.table(pRows, pFields);
     console.log(tail);
+    return (p && fields) ?
+      rows.map(r =>
+        Object.fromEntries(fields.map(f => [f, r[f]]).filter(e => e[1]))
+      ) :
+      null;
   }
 
   dumpRow (i: number|null, showEmpty = false, useCSS?: boolean): string[] {

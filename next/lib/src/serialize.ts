@@ -32,11 +32,12 @@ export function bigBoyToBytes (n: bigint): Uint8Array {
     bytes[0] = 128;
   }
 
+  // WOOPSIE
   while (n) {
     if (bytes[0] === 255) throw new Error('bruh thats too big');
     bytes[0]++;
     bytes.push(Number(n & 255n));
-    n >>= 64n;
+    n >>= 8n;
   }
 
   return new Uint8Array(bytes);
