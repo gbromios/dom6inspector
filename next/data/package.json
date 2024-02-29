@@ -18,8 +18,8 @@
     ".": {
       "default": "./src/index.ts"
     },
-    "./client": {
-      "default": "./src/client.ts"
+    "./ui": {
+      "default": "./src/ui/index.ts"
     }
   }
 }

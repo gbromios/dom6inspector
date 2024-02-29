@@ -39,7 +39,8 @@ type CreateExtraField = (
 ) => ColumnArgs;
 
 export type ParseSchemaOptions = {
-  name?: string,
+  name: string,
+  key: string,
   ignoreFields: Set<string>;
   separator: string;
   overrides: Record<string, (...args: any[]) => any>;
@@ -48,6 +49,8 @@ export type ParseSchemaOptions = {
 }
 
 const DEFAULT_OPTIONS: ParseSchemaOptions = {
+  name: '',
+  key: '',
   ignoreFields: new Set(),
   overrides: {},
   knownFields: {},
@@ -61,13 +64,16 @@ export function csvToTable(
 ): Table {
   const _opts = { ...DEFAULT_OPTIONS, ...options };
   const schemaArgs: SchemaArgs = {
-    name: _opts.name ?? `Schema_${_nextAnonSchemaId++}`,
+    name: _opts.name,
+    key: _opts.key,
     flagsUsed: 0,
     columns: [],
     fields: [],
     rawFields: {},
     overrides: _opts.overrides,
   };
+  if (!schemaArgs.name) throw new Error('name is requried');
+  if (!schemaArgs.key) throw new Error('key is requried');
 
   if (raw.indexOf('\0') !== -1) throw new Error('uh oh')
 
@@ -156,6 +162,9 @@ export function csvToTable(
     schemaArgs.columns.push(col);
     schemaArgs.fields.push(col.name);
   }
+
+  if (schemaArgs.key !== '__rowId' && !schemaArgs.fields.includes(schemaArgs.key))
+    throw new Error(`fields is missing the supplied key "${schemaArgs.key}"`);
 
   for (const col of schemaArgs.columns) {
     for (const r of data)

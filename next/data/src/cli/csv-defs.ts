@@ -3,6 +3,7 @@ import type { ParseSchemaOptions } from './parse-csv'
 export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
   '../../gamedata/BaseU.csv': {
     name: 'Unit',
+    key: 'id',
     ignoreFields: new Set([
       'armor1',
       'armor2',
@@ -34,7 +35,7 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
       'rand4',
       'rand5',
       'rand6',
-      'reanimator.1',
+      'reanimator.1', // turns out nothing actually references this field anyway?
       'wpn1',
       'wpn2',
       'wpn3',
@@ -42,6 +43,8 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
       'wpn5',
       'wpn6',
       'wpn7',
+      'summon',
+      'n_summon'
     ]),
     knownFields: {
       id: COLUMN.U16,
@@ -178,8 +181,8 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
       plainshape: COLUMN.U16,
       xpshape: COLUMN.U8,
       nametype: COLUMN.U8,
-      summon: COLUMN.I16,
-      n_summon: COLUMN.U8,
+      //summon: COLUMN.I16,
+      //n_summon: COLUMN.U8,
       batstartsum1: COLUMN.U16,
       batstartsum2: COLUMN.U16,
       domsummon: COLUMN.U16,
@@ -287,7 +290,7 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
       alchemy: COLUMN.U8,
       woundfend: COLUMN.U8,
       falsearmy: COLUMN.I8,
-      summon5: COLUMN.U8,
+      //summon5: COLUMN.U8,
       slaver: COLUMN.U16,
       deathparalyze: COLUMN.U8,
       corpseconstruct: COLUMN.U8,
@@ -318,10 +321,11 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
       mountainrec: COLUMN.U8,
       indepspells: COLUMN.U8,
       enchrebate50: COLUMN.U8,
-      summon1: COLUMN.U16,
+      //summon1: COLUMN.U16,
       randomspell: COLUMN.U8,
       insanify: COLUMN.U8,
-      'reanimator.1': COLUMN.U8,
+      //just a copy of reanimator 2
+      //'reanimator.1': COLUMN.U8,
       defector: COLUMN.U8,
       batstartsum1d3: COLUMN.U16,
       enchrebate10: COLUMN.U8,
@@ -589,170 +593,212 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
   },
   '../../gamedata/BaseI.csv': {
     name: 'Item',
+    key: 'id',
     ignoreFields: new Set(['end']),
   },
 
   '../../gamedata/MagicSites.csv': {
     name: 'MagicSite',
-    ignoreFields: new Set(['end']),
+    key: 'id',
+    ignoreFields: new Set(['domconflict.1','end']),
   },
   '../../gamedata/Mercenary.csv': {
     name: 'Mercenary',
+    key: 'id',
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/afflictions.csv': {
     name: 'Affliction',
+    key: 'bit_value',
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/anon_province_events.csv': {
     name: 'AnonProvinceEvent',
+    key: 'number',
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/armors.csv': {
     name: 'Armor',
+    key: 'id',
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/attribute_keys.csv': {
     name: 'AttributeKey',
+    key: 'number',
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/attributes_by_armor.csv': {
     name: 'AttributeByArmor',
+    key: '__rowId', // TODO - need multi-index
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/attributes_by_nation.csv': {
     name: 'AttributeByNation',
+    key: '__rowId', // TODO - need multi-index
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/attributes_by_spell.csv': {
     name: 'AttributeBySpell',
+    key: '__rowId', // TODO - need multi-index
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/attributes_by_weapon.csv': {
     name: 'AttributeByWeapon',
+    key: '__rowId', // TODO - need multi-index
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/buffs_1_types.csv': {
     // TODO - got some big bois in here.
     name: 'BuffBit1',
+    key: '__rowId', // TODO - need multi-index
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/buffs_2_types.csv': {
     name: 'BuffBit2',
+    key: '__rowId', // TODO - need multi-index
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/coast_leader_types_by_nation.csv': {
     name: 'CoastLeaderTypeByNation',
+    key: '__rowId', // TODO - need multi-index
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/coast_troop_types_by_nation.csv': {
     name: 'CoastTroopTypeByNation',
+    key: '__rowId', // TODO - need multi-index
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/effect_modifier_bits.csv': {
     name: 'SpellBit',
+    key: '__rowId', // TODO - need multi-index
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/effects_info.csv': {
+    key: 'number',
     name: 'SpellEffectInfo',
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/effects_spells.csv': {
+    key: 'record_id',
     name: 'EffectSpell',
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/effects_weapons.csv': {
     name: 'EffectWeapon',
+    key: 'record_id',
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/enchantments.csv': {
+    key: 'number',
     name: 'Enchantment',
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/events.csv': {
+    key: 'id',
     name: 'Event',
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/fort_leader_types_by_nation.csv': {
     name: 'FortLeaderTypeByNation',
+    key: '__rowId', // TODO - buh
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/fort_troop_types_by_nation.csv': {
     name: 'FortTroopTypeByNation',
+    key: '__rowId', // TODO - buh
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/magic_paths.csv': {
+    key: 'number', // TODO - buh
     name: 'MagicPath',
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/map_terrain_types.csv': {
+    key: 'bit_value', // TODO - buh
     name: 'TerrainTypeBit',
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/monster_tags.csv': {
+    key: 'number', // TODO - buh
     name: 'MonsterTag',
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/nametypes.csv': {
+    key: 'id',
     name: 'NameType',
   },
   '../../gamedata/nations.csv': {
+    key: 'id',
     name: 'Nation',
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/nonfort_leader_types_by_nation.csv': {
+    key: '__rowId', // TODO - buh
     name: 'NonFortLeaderTypeByNation',
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/nonfort_troop_types_by_nation.csv': {
+    key: '__rowId', // TODO - buh
     name: 'NonFortLeaderTypeByNation',
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/other_planes.csv': {
+    key: 'number',
     name: 'OtherPlane',
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/pretender_types_by_nation.csv': {
+    key: '__rowId', // TODO - buh
     name: 'PretenderTypeByNation',
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/protections_by_armor.csv': {
+    key: '__rowId', // TODO - buh
     name: 'ProtectionByArmor',
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/realms.csv': {
+    key: '__rowId', // TODO - buh
     name: 'Realm',
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/site_terrain_types.csv': {
+    key: 'bit_value',
     name: 'SiteTerrainType',
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/special_damage_types.csv': {
+    key: 'bit_value',
     name: 'SpecialDamageType',
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/special_unique_summons.csv': {
     name: 'SpecialUniqueSummon',
+    key: 'number',
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/spells.csv': {
     name: 'Spell',
+    key: 'id',
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/terrain_specific_summons.csv': {
     name: 'TerrainSpecificSummon',
+    key: 'number',
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/unit_effects.csv': {
     name: 'UnitEffect',
+    key: 'number',
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/unpretender_types_by_nation.csv': {
+    key: '__rowId',
     name: 'UnpretenderTypeByNation',
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/weapons.csv': {
+    key: 'id',
     name: 'Weapon',
     ignoreFields: new Set(['end', 'weapon']),
   },

@@ -1,56 +1,92 @@
 import { csvDefs } from './csv-defs';
-import { parseAll, readCSV } from './parse-csv';
+import { ParseSchemaOptions, parseAll, readCSV } from './parse-csv';
 import process from 'node:process';
 import { Table } from 'dom6inspector-next-lib';
 import { writeFile } from 'node:fs/promises';
+import { joinDumped } from './join-tables';
 
 const width = process.stdout.columns;
 const [file, ...fields] = process.argv.slice(2);
 
-console.log('ARGS', { file, fields })
+function findDef (name: string): [string, Partial<ParseSchemaOptions>] {
+  if (csvDefs[name]) return [name, csvDefs[name]];
+  for (const k in csvDefs) {
+    const d = csvDefs[k];
+    if (d.name === name) return [k, d];
+  }
+  throw new Error(`no csv defined for "${name}"`);
+}
 
-if (file) {
-  const def = csvDefs[file];
-  if (def) getDUMPY(await readCSV(file, def));
-} else {
-  const dest = './data/db.bin'
+async function dumpOne(key: string) {
+  const table = await readCSV(...findDef(key));
+  compareDumps(table);
+}
+
+async function dumpAll () {
   const tables = await parseAll(csvDefs);
+  // JOINS
+  //joinDumped(tables);
+  const dest = './data/db.30.bin'
   const blob = Table.concatTables(tables);
   await writeFile(dest, blob.stream(), { encoding: null });
   console.log(`wrote ${blob.size} bytes to ${dest}`);
 }
 
-/*
-if (file) {
-  const def = csvDefs[file];
-  if (def) getDUMPY(await readCSV(file, def));
-  else throw new Error(`no def for "${file}"`);
-} else {
-  const tables = await parseAll(csvDefs);
-  for (const t of tables) await getDUMPY(t);
-}
-*/
-
-
-async function getDUMPY(t: Table) {
-  //const n = Math.floor(Math.random() * (t.rows.length - 30));
-  const n = 700;
-  const m = n + 30;
-  const f = fields.length ? fields : t.schema.fields.slice(0, 8);
-  console.log('\n\n       BEFORE:');
-  for (const c of f) {
-    console.log(` - ${c} : ${t.schema.columnsByName[c].label}`)
+async function compareDumps(t: Table) {
+  const maxN = t.rows.length - 30
+  let n: number;
+  let p: any = undefined;
+  if (fields[0] === 'FILTER') {
+    n = 0; // will be ingored
+    fields.splice(0, 1, 'id', 'name');
+    p = (r: any) => fields.slice(2).some(f => r[f]);
+  } else if (fields[1] === 'ROW' && fields[2]) {
+    n = Number(fields[2]) - 15;
+    console.log(`ensure row ${fields[2]} is visible (${n})`);
+    if (Number.isNaN(n)) throw new Error('ROW must be NUMBER!!!!');
+  } else {
+    n = Math.floor(Math.random() * maxN)
   }
-  t.print(width, f, n, m);
-  t.schema.print();
-  console.log('wait....');
-  (globalThis._ROWS ??= {})[t.schema.name] = t.rows;
-  await new Promise(r => setTimeout(r, 1000));
+  n = Math.min(maxN, Math.max(0, n));
+  const m = n + 30;
+  const f = (fields.length ? (fields[0] === 'ALL' ? t.schema.fields : fields) :
+   t.schema.fields.slice(0, 10)) as string[]
+  dumpToConsole(t, n, m, f, 'BEFORE', p);
+  /*
+  if (1 + 1 === 2) return; // TODO - we not worried about the other side yet
   const blob = Table.concatTables([t]);
+  console.log(`made ${blob.size} byte blob`);
+  console.log('wait....');
+  //(globalThis._ROWS ??= {})[t.schema.name] = t.rows;
+  await new Promise(r => setTimeout(r, 1000));
   console.log('\n\n')
   const u = await Table.openBlob(blob);
-  console.log('\n\n        AFTER:');
-  Object.values(u)[0]?.print(width, f, n, m);
-  u.Unit.schema.print(width);
+  dumpToConsole(u[t.schema.name], n, m, f, 'AFTER', p);
   //await writeFile('./tmp.bin', blob.stream(), { encoding: null });
+  */
 }
+
+function dumpToConsole(
+  t: Table,
+  n: number,
+  m: number,
+  f: string[],
+  h: string,
+  p?: (r: any) => boolean,
+) {
+  console.log(`\n     ${h}:`);
+  t.schema.print(width);
+  console.log(`(view rows ${n} - ${m})`);
+  const rows = t.print(width, f, n, m, p);
+  if (rows) for (const r of rows) console.table([r]);
+  console.log(`    /${h}\n\n`)
+}
+
+
+
+console.log('ARGS', { file, fields })
+
+if (file) dumpOne(file);
+else dumpAll();
+
+
