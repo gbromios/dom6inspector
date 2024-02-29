@@ -1,28 +1,53 @@
 .ft-table {
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: 100%;
   --row-h: 2em;
-  width: 930px;
-  overflow-x: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   min-width: 0;
+  min-height: 0;
+  align-items: flex-start;
+  height: 100%;
+  scrollbar-gutter: stable;
+  width: calc(15px + var(--row-w)); // TODO - figure this shit out
 }
 
 .ft-head {
-  flex: 0 0 var(--row-h);
+  height: var(--row-h);
+  width: var(--row-w);
   background-color: #222;
   top: 0;
   display: flex;
   align-items: stretch;
   justify-content: flex-start;
-  scrollbar-gutter: stable;
-  overflow-y: auto; // lol ok
-  //border-right: solid 15px var(--se-color);
+  position: sticky;
+  background: var(--bg-color);
+  z-index: 1999;
+  // scrollbar-gutter: stable;
+  //overflow: hidden; // lol ok
+}
+
+.ft-foot {
+  height: calc(1.5 * var(--row-h));
+  padding: 8px;
+  border: 1px solid var(--se-color);
+  font-style: italic;
+  width: var(--row-w);
+  background-color: #222;
+  bottom: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+  position: sticky;
+  background: var(--bg-color);
+  z-index: 1999;
+  // scrollbar-gutter: stable;
+  //overflow: hidden; // lol ok
 }
 
 .ft-col {
   height: var(--row-h);
+  flex: 0 0 var(--col-w);
   display: flex;
   align-items: center;
   min-width: 0;
@@ -44,16 +69,20 @@
 
 .ft-body {
   flex: 1 1 100%;
+  /*
   min-height: 0;
   overflow-y: overlay;
-  scrollbar-gutter: stable;
+  overflow-x: hidden;
+  //scrollbar-gutter: stable;
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  */
 }
 
 .ft-row {
   flex: 0 0 var(--row-h);
+  width: var(--row-w);
   display: flex;
   align-items: stretch;
   justify-content: flex-start;
@@ -63,6 +92,7 @@
 
 .ft-data {
   height: var(--row-h);
+  flex: 0 0 var(--col-w);
   position: relative;
   border: 1px solid var(--se-color);
   display: flex;

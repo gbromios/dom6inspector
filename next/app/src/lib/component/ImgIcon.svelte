@@ -1,6 +1,7 @@
 <script lang="ts">
   import { icons } from '$lib/icon';
   export let name: string;
+  export let title: null|string = null;
   $: icon = icons[name];
 </script>
 
@@ -13,9 +14,10 @@
     height={icon.height}
     src={icon.src}
     alt="bet youd like to know"
+    title={title}
   >
 {:else}
-  <span>!</span>
+  <span data-name={name} >�</span>
 {/if}
 
 

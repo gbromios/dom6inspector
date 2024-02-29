@@ -16,7 +16,7 @@ export type Column<T = any, P = Record<string, any>> = {
 
   // TODO - will think of something a bit more fancier but just fix all sizes
   // for the time being
-  size?: string,
+  size?: number,
 }
 
 export function rawValue<T = any> (
@@ -30,7 +30,7 @@ export function rawValue<T = any> (
     labelText,
     getItemValue: (item: any) => item[key],
     getItemText: (item: T) => (item as any)[key], // TODO - based on type
-    size: '0 0 10em',
+    size: 10,
   }
 }
 
@@ -57,6 +57,6 @@ export function boolValue<T = any> (opts: {
     itemComponent: TDBool,
     getItemValue: (item: any) => item[key] ?? false,
     getItemText: (item: T) => (item as any)[key] ? is : isNot,
-    size: '0 0 2em'
+    size: 2,
   }
 }

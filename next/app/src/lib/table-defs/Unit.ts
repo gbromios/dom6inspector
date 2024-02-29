@@ -1,26 +1,35 @@
 import type { Column } from './column';
 import { boolValue, rawValue } from './column';
 import MagicPathsTD from '$lib/component/Data/MagicPaths.svelte'
+import UnitSource from '$lib/component/Data/UnitSource.svelte'
 import UnitNameTD from '$lib/component/Data/UnitName.svelte'
+import { calcMagicLevels, calcResearch, calcUnitCustomMagic } from '$lib/magic-stats';
 export const rowKey: string = 'id';
 
+// um... idk mane, we'll think of something better
+const longnames = new Set<number>([
+  2530, 589, 944, 1375, 2496, 2494, 1672, 2758, 3241, 2612, 1019, 1035, 1494,
+  2085, 2235, 2495, 3467, 2246, 2757, 581, 2272, 1660
+])
+
 export const columns: Column[] = [
-  { ...rawValue('id', 'ID'), size: '0 0 3em' },
+  { ...rawValue('id', 'ID'), size: 3 },
   {
     key: 'name',
     labelText: 'Name',
-    size: '0 0 16em', // ????
+    size: 16,
     itemComponent: UnitNameTD,
     getItemValue(row) {
       return {
         n: row.name,
         f: row.fixedname || null,
         i: row.__rowId,
+        w: longnames.has(row.id)
       }
     },
     getItemText (item) {
-      const { n, f, i } = item.name;
-      return (f ?`\u201C${f}\u201D ${n}` : n); //+ ` (${i})`;
+      const { n, f } = item.name;
+      return (f ?`\u201C${f}\u201D ${n}` : n); //+ ` (${item.name.i})`;
     }
   },
   rawValue('att', 'Attack'),
@@ -50,14 +59,22 @@ export const columns: Column[] = [
   rawValue('ap', 'Action Points'),
   rawValue('researchbonus', 'Research Bonus'),
   {
-    key: 'rt',
-    labelText: 'Rec.',
-    size: '0 0 6em',
+    key: 'source',
+    labelText: 'Source',
+    size: 6,
+    //itemComponent: UnitSource,
     getItemValue (item: any) {
-      return item.r === 1 ? 'Commander' : 'Troop';
+      return {
+        // oops
+        type: item.startdom ? 3 : item.rt ? 2 : 1
+      };
     },
     getItemText (item: any) {
-      return item.rt;
+      switch(item.source.type) {
+        case 1: return 'Unit';
+        case 2: return 'Cmdr.';
+        case 3: return 'God';
+      }
     }
   },
   rawValue('mounted'),
@@ -209,25 +226,7 @@ export const columns: Column[] = [
   {
     key: 'custommagic',
     labelText: 'Custom Magic',
-    getItemValue (item: any, row: any) {
-      if (!item['&custommagic']?.length) return null; // who care
-      const cms = { spec: [] as any[], lvl: 0 }
-      for (const p of item['&custommagic']) {
-        const mask = (p & 1023) << 7;
-        const count = (p >>> 10) & 63;
-        const strength = (p >>> 16);
-        const paths = maskToPaths(mask);
-        for (let i = 0; i < count; i++) {
-          cms.lvl += strength / 100;
-          cms.spec.push({
-            chance: Math.min(strength, 100),
-            lvl: Math.max(strength / 100, 1),
-            paths
-          });
-        }
-      }
-      return cms.spec.length ? cms : null;
-    },
+    getItemValue: calcUnitCustomMagic,
     getItemText (r: any) {
       return r.custommagic ? Math.round(r.custommagic.lvl) : null;
     },
@@ -235,8 +234,8 @@ export const columns: Column[] = [
   {
     key: 'magicpaths',
     labelText: 'Magic Paths',
-    size: '0 0 16em',
-    getItemValue: MagicLevels,
+    size: 14,
+    getItemValue: calcMagicLevels,
     itemComponent: MagicPathsTD,
     getItemText (item: any) {
       // TODO - component~
@@ -250,102 +249,20 @@ export const columns: Column[] = [
   {
     key: 'research',
     labelText: `Research Ability`,
-    getItemValue: getResearch,
+    getItemValue: calcResearch,
     getItemText (r: any) { return `${r.research}` }
   },
 ]
 
-function getResearch (item: any, row: any) {
-  // TODO - don't forget researchwithoutmagic
-  // TODO - a single holy path by itself means there should not be any base r
-  if (item.fixedresearch)
-    return (row.magicpaths ??= {}).R = item.fixedresearch;
-  const mlvl = row.magicpaths;
-  if (!mlvl) return 0;
-  const base = 5 + (item.researchbonus || 0);
-  let hasResearchMagic = false;
-  let rv = Object.entries(mlvl).reduce((ra, [p, ml]) => {
-    //console.log(ra, p, ml)
-    if (!ml) return ra;
-    switch (p) {
-      case 'H':
-      case 'R':
-        return ra;
-      case 'U': // sadly...
-        ml = Math.floor(ml as number) || 0;
-      default:
-        hasResearchMagic = true;
-        return ra + (ml as number || 0) * 2
-    }
-  }, base);
-  //console.log('research for', item.name, rv)
 
-  if (!hasResearchMagic) return 0;
-  mlvl.R = rv;
-  return rv;
-}
-
-type MagicLevels = Record<string, number>;
-
-function MagicLevels (src?: any|number, lvl?: any): MagicLevels|null {
-  let lvls: Record<string, number>;
-  let hasMagic = false;
-  if (typeof src === 'number') {
-    if (lvl && typeof lvl === 'number') {
-      // lvl applied to mask (src)
-      hasMagic = true;
-      lvls = Object.fromEntries(Array.from(MAGIC_PATHS, p => [p, 0]));
-      if (src) for (const path of maskToPaths(src)) lvls[path] += lvl;
-    } else if (lvl === 0) {
-      // src is lvl
-      if (src) hasMagic = true;
-      lvls = Object.fromEntries(Array.from(MAGIC_PATHS, p => [p, src]));
-    } else {
-      throw new Error('what signature is this');
-    }
-  } else {
-    lvls = Object.fromEntries(Array.from(MAGIC_PATHS, p => {
-      const v = src[p] || 0;
-      if (v) hasMagic = true;
-      return [p, v];
-    }));
-
-    if (lvl.custommagic) {
-      hasMagic = true;
-      lvls['U'] = Math.round(lvl.custommagic.lvl);
-    }
-  }
-  //console.log('MAGIC LEVELS', src?.id, { lvls })
-  return hasMagic ? lvls : null;
-}
-
-const MAGIC_PATHS = 'FAWESDNGBH';
-
-const CM_KEYS = [1,2,3,4,5,6]
-  .map(n => `rand${n} nbr${n} link${n} mask${n}`.split(' '))
-
+//const CM_KEYS = [1,2,3,4,5,6]
+  //.map(n => `rand${n} nbr${n} link${n} mask${n}`.split(' '))
 //console.log(CM_KEYS)
-
-
-function maskToPaths (mask: number): string[] {
-  const paths: string[] = [];
-  if (mask & 128  ) paths.push('F');
-  if (mask & 256  ) paths.push('A');
-  if (mask & 512  ) paths.push('W');
-  if (mask & 1024 ) paths.push('E');
-  if (mask & 2048 ) paths.push('S');
-  if (mask & 4096 ) paths.push('D');
-  if (mask & 8192 ) paths.push('N');
-  if (mask & 16384) paths.push('G');
-  if (mask & 32768) paths.push('B');
-  if (mask & 65536) paths.push('H');
-  return paths;
-}
 
 export const defaults = new Set<string>([
   'id', 'name',
   //...'FAWESDNGB'
-  'rt',
+  'source',
   'holy',
   'magicpaths',
 ])

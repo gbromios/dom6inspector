@@ -1,6 +1,6 @@
 <script lang="ts">
   export let item: any;
-  export let value: { n: string, f: string | null, i: number };
+  export let value: { n: string, f: string | null, i: number, w: boolean };
   item;
 
   let hover: boolean = false;
@@ -25,7 +25,7 @@
     </span>
   </span>
 
-  {#if hover}
+  {#if value.w && hover}
   <span class="popoverflow" role="presentation">
     <span class="not-text">
       {#if value.f }
@@ -72,7 +72,8 @@ div {
   //background-color: brown;
   border: 1px solid var(--se-color);
   background-color: var(--bg-color);
-  padding: 0 4px;
+  padding-inline-start: 4px;
+  padding-inline-end: 8px;
   border-inline-end: 2px solid var(--se-color);
 }
 </style>

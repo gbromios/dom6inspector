@@ -12,6 +12,6 @@ export async function loadIcons () {
   for (const [name, [x, y, width, height, src]] of Object.entries(data) as any) {
     icons[name] = { name, x, y, width, height, src };
     // @ts-ignore shut up and preload this icon jackass
-    new Image(width, height).src = src;
+    //new Image(width, height).src = src;
   }
 }
