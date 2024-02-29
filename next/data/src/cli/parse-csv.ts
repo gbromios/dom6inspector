@@ -88,7 +88,7 @@ export function csvToTable(
     if (hCount.has(f)) {
       console.warn(`${schemaArgs.name} @ ${i} "${f}" is a duplicate field name`);
       const n = hCount.get(f)!
-      rawFields[i] = `${f}.${n}`;
+      rawFields[i] = `${f}~${n}`;
     } else {
       hCount.set(f, 1);
     }

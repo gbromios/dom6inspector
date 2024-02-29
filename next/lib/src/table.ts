@@ -99,7 +99,34 @@ export class Table {
       //console.log(`IN BLOBS FOR T=${i}`, tb)
       return this.fromBlob(tb);
     }))
-    return Object.fromEntries(tables.map(t => [t.schema.name, t]));
+    const tableMap = Object.fromEntries(tables.map(t => [t.schema.name, t]));
+
+    for (const t of tables) {
+      if (!t.schema.joins) continue;
+      const [aT, aF, bT, bF] = t.schema.joins;
+      const tA = tableMap[aT];
+      const tB = tableMap[bT];
+      if (!tA) throw new Error(`${t.name} joins undefined table ${aT}`);
+      if (!tB) throw new Error(`${t.name} joins undefined table ${bT}`);
+      if (!t.rows.length) continue; // empty table i guess?
+      for (const r of t.rows) {
+        const idA = r[aF];
+        const idB = r[bF];
+        if (idA === undefined || idB === undefined) {
+          console.error(`row has a bad id?`, r);
+          continue;
+        }
+        const a = tB.map.get(idA);
+        const b = tA.map.get(idB);
+        if (a === undefined || b === undefined) {
+          console.error(`row has a missing id?`, r);
+          continue;
+        }
+        (a[t.name] ??= []).push(idB);
+        (b[t.name] ??= []).push(idA);
+      }
+    }
+    return tableMap;
   }
 
   static async fromBlob ({

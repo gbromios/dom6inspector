@@ -1,0 +1,36 @@
+52	Capital Magic Site {Ntn: #startsite}
+100	Capital Magic Site (Unholy?) {Ntn: #startsite}
+139	National Unique Hero {Ntn: #hero1}
+140	National Unique Hero {Ntn: #hero2}
+141	National Unique Hero {Ntn: #hero3}
+142	National Unique Hero {Ntn: #hero4}
+143	National Unique Hero {Ntn: #hero5}
+144	National Unique Hero {Ntn: #hero6}
+145	National Generic Hero {Ntn: #multihero1}
+146	National Generic Hero {Ntn: #multihero2}
+158	Coastal Fort Commander {Ntn: #coastcom1}
+159	Coastal Fort Commander {Ntn: #coastcom2}
+160	Coastal Fort Troop {Ntn: #coastunit1}
+161	Coastal Fort Troop {Ntn: #coastunit2}
+162	Coastal Fort Troop {Ntn: #coastunit3}
+172	Underwater Fort Commander {Ntn: #uwcom}
+186	Underwater Fort Commander {Ntn: #uwcom}
+187	Underwater Fort Commander {Ntn: #uwcom}
+188	Underwater Fort Commander {Ntn: #uwcom}
+189	Underwater Fort Troop {Ntn: #uwunit}
+190	Underwater Fort Troop {Ntn: #uwunit}
+191	Underwater Fort Troop {Ntn: #uwunit}
+213	Underwater Fort Troop {Ntn: #uwunit}
+289	Home Realm {Ntn: #homerealm}
+294	Terrain-Specific Recruit: Forest {Ntn: #forestrec}
+295	Terrain-Specific Commander: Forest {Ntn: #forestcom}
+296	Terrain-Specific Recruit: Swamp {Ntn: #swamprec}
+297	Terrain-Specific Commander: Swamp {Ntn: #swampcom}
+298	Terrain-Specific Recruit: Mountain {Ntn: #mountainrec}
+299	Terrain-Specific Commander: Mountain {Ntn: #mountaincom}
+300	Terrain-Specific Recruit: Waste {Ntn: #wasterec}
+301	Terrain-Specific Commander: Waste {Ntn: #wastecom}
+302	Terrain-Specific Recruit: Cave {Ntn: #caverec}
+303	Terrain-Specific Commander: Cave {Ntn: #cavecom}
+314	Cheap God 20 {Ntn: #cheapgod20}
+315	Cheap God 40 {Ntn: #cheapgod40}

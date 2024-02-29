@@ -16,6 +16,7 @@ import { tableDeco } from './util';
 export type SchemaArgs = {
   name: string;
   key: string;
+  joins?: string;
   columns: Column[],
   fields: string[],
   flagsUsed: number;
@@ -25,17 +26,20 @@ export type SchemaArgs = {
 
 type BlobPart = any; // ?????
 
+
+
 export class Schema {
   readonly name: string;
   readonly columns: Readonly<Column[]>;
   readonly fields: Readonly<string[]>;
+  readonly joins?: [string, string, string, string];
   readonly key: string;
   readonly columnsByName: Record<string, Column>;
   readonly fixedWidth: number; // total bytes used by numbers + flags
   readonly flagFields: number;
   readonly stringFields: number;
   readonly bigFields: number;
-  constructor({ columns, name, flagsUsed, key }: SchemaArgs) {
+  constructor({ columns, name, flagsUsed, key, joins }: SchemaArgs) {
     this.name = name;
     this.key = key;
     this.columns = [...columns].sort(cmpFields);
@@ -46,6 +50,26 @@ export class Schema {
       (w, c) => w + ((!c.isArray && c.width) || 0),
       Math.ceil(flagsUsed / 8), // 8 flags per byte, natch
     );
+
+    if (joins) {
+      const [a, b, ...r] = joins.split(':');
+      const [aT, aF, ...aR] = a?.split('.');
+      const [bT, bF, ...bR] = b?.split('.');
+
+      if (!a || !b || r.length)
+        throw new Error(`bad join: ${joins}`);
+      if (!aT || !aF || aR.length)
+        throw new Error(`bad join left side ${a}`);
+      if (!bT || !bF || bR.length)
+        throw new Error(`bad join right side ${b}`);
+      if (aT === bT && aF === bF)
+        throw new Error(`cant join entity to itself (${joins})`)
+      if (!this.columnsByName[aF])
+        throw new Error(`bad join left side ${a}: unknown key "${aF}"`);
+      if (!this.columnsByName[bF])
+        throw new Error(`bad join right side ${b}: unknown key "${bF}"`);
+      this.joins = [aT, aF, bT, bF];
+    }
 
     let o: number|null = 0;
     let f = true;
@@ -129,15 +153,20 @@ export class Schema {
     let read: number;
     let name: string;
     let key: string;
+    let joins: string|undefined;
     const bytes = new Uint8Array(buffer);
     [name, read] = bytesToString(i, bytes);
     i += read;
     [key, read] = bytesToString(i, bytes);
     i += read;
+    [joins, read] = bytesToString(i, bytes);
+    i += read;
 
+    if (!joins) joins = undefined;
     const args = {
       name,
       key,
+      joins,
       columns: [] as Column[],
       fields: [] as string[],
       flagsUsed: 0,
@@ -249,11 +278,18 @@ export class Schema {
     const parts = new Uint8Array([
       ...stringToBytes(this.name),
       ...stringToBytes(this.key),
+      ...this.serializeJoins(),
       this.columns.length & 255,
       (this.columns.length >>> 8),
       ...this.columns.flatMap(c => c.serialize())
     ])
     return new Blob([parts]);
+  }
+
+  serializeJoins () {
+    if (!this.joins) return new Uint8Array(1);
+    const [aT, aF, bT, bF] = this.joins;
+    return stringToBytes(`${aT}.${aF}:${bT}.${bF}`);
   }
 
   serializeRow (r: Row): Blob {
@@ -262,51 +298,50 @@ export class Schema {
     const lastBit = this.flagFields - 1;
     const blobParts: BlobPart[] = [fixed];
     for (const c of this.columns) {
-      
       try {
-      const v = r[c.name]
-      if (c.isArray) {
-        const b: Uint8Array = c.serializeArray(v as any[])
-        i += b.length; // debuggin
-        blobParts.push(b);
-        continue;
-      }
-      switch(c.type) {
-        case COLUMN.STRING: {
-          const b: Uint8Array = c.serializeRow(v as string)
+        const v = r[c.name]
+        if (c.isArray) {
+          const b: Uint8Array = c.serializeArray(v as any[])
           i += b.length; // debuggin
           blobParts.push(b);
-        } break;
-        case COLUMN.BIG: {
-          const b: Uint8Array = c.serializeRow(v as bigint)
-          i += b.length; // debuggin
-          blobParts.push(b);
-        } break;
+          continue;
+        }
+        switch(c.type) {
+          case COLUMN.STRING: {
+            const b: Uint8Array = c.serializeRow(v as string)
+            i += b.length; // debuggin
+            blobParts.push(b);
+          } break;
+          case COLUMN.BIG: {
+            const b: Uint8Array = c.serializeRow(v as bigint)
+            i += b.length; // debuggin
+            blobParts.push(b);
+          } break;
 
-        case COLUMN.BOOL:
-          fixed[i] |= c.serializeRow(v as boolean);
-          // dont need to check for the last flag since we no longer need i
-          // after we're done with numbers and booleans
-          //if (c.flag === 128) i++;
-          // ...but we will becauyse we broke somethign
-          if (c.flag === 128 || c.bit === lastBit) i++;
-          break;
+          case COLUMN.BOOL:
+            fixed[i] |= c.serializeRow(v as boolean);
+            // dont need to check for the last flag since we no longer need i
+            // after we're done with numbers and booleans
+            //if (c.flag === 128) i++;
+            // ...but we will becauyse we broke somethign
+            if (c.flag === 128 || c.bit === lastBit) i++;
+            break;
 
-        case COLUMN.U8:
-        case COLUMN.I8:
-        case COLUMN.U16:
-        case COLUMN.I16:
-        case COLUMN.U32:
-        case COLUMN.I32:
-          const bytes = c.serializeRow(v as number)
-          fixed.set(bytes, i)
-          i += c.width!;
-          break;
+          case COLUMN.U8:
+          case COLUMN.I8:
+          case COLUMN.U16:
+          case COLUMN.I16:
+          case COLUMN.U32:
+          case COLUMN.I32:
+            const bytes = c.serializeRow(v as number)
+            fixed.set(bytes, i)
+            i += c.width!;
+            break;
 
-        default:
-          //console.error(c)
-          throw new Error(`wat type is this ${(c as any).type}`);
-      }
+          default:
+            //console.error(c)
+            throw new Error(`wat type is this ${(c as any).type}`);
+        }
       } catch (ex) {
         console.log('GOOBER COLUMN:', c);
         console.log('GOOBER ROW:', r);

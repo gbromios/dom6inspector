@@ -1,0 +1,23 @@
+278	Restrict to Nation {Spl: #restricted}
+617	Number of chain lightning bounces {Spl: #maxbounces}
+700	Map Range {Spl: #provrange}
+701	Destination Terrain {Spl: #onlygeodst}
+702	Source Terrain {Spl: #onlygeosrc}
+703	Cannot cast from terrain {Spl: #nogeosrc}
+704	Cannot target terrain {Spl: #nogeodst}
+705	Cannot trace range through seas {Spl: #nowatertrace}
+706	No Path over Land {Spl: #nolandtrace}
+708	Hidden Enchantment {Spl: #hiddenench}
+713	Only cast at coast {Spl: #onlycoastsrc}
+724	Extra effect in geo {Spl: #extraeffectgeo}
+725	Can't target same province more than once/turn {Spl: #uniquetarget}
+728	Adds AN lingering heat {Spl: #anlingeringheat}
+729	Dispelled if province changes owners {Spl: #friendlyench}
+731	Can only be cast by {Spl: #onlymnr}
+732	Unit gets magic of target {Spl: #polygetmagic}
+733	Sets current province as home {Spl: #sethome}
+735	AI will not cast unless path level lower than {Spl: #aibadlvl}
+738	Only target friendly provinces {Spl: #onlyowndst}
+750	God Path Restriction {Spl: #godpathspell}
+787	Casting Time {Spl: #casttime}
+790	Remote summon commander {Spl: #farsumcom}
