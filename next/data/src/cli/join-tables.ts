@@ -91,7 +91,7 @@ function makeNationSites(tables: TR): Table {
     flagsUsed: 1,
     overrides: {},
     rawFields: {},
-    joins: 'Nation.nationId:MagicSite.siteId',
+    joins: 'Nation[nationId]+MagicSite[siteId]',
     fields: [
       'nationId',
       'siteId',
@@ -150,7 +150,11 @@ function makeNationSites(tables: TR): Table {
   while ((di = delRows.pop()) !== undefined)
     AttributeByNation.rows.splice(di, 1);
 
-  return tables[schema.name] = new Table(rows, schema);
+  return tables[schema.name] = Table.applyLateJoins(
+    new Table(rows, schema),
+    tables,
+    true
+  );
 }
 
 /*
@@ -211,7 +215,7 @@ function makeSpellByNation (tables: TR): Table {
   const schema = new Schema({
     name: 'SpellByNation',
     key: '__rowId',
-    joins: 'Spell.spellId:Nation.nationId',
+    joins: 'Spell[spellId]+Nation[nationId]',
     flagsUsed: 0,
     overrides: {},
     rawFields: { spellId: 0, nationId: 1 },
@@ -246,7 +250,12 @@ function makeSpellByNation (tables: TR): Table {
   }
   let di: number|undefined;
   while ((di = delRows.pop()) !== undefined) attrs.rows.splice(di, 1);
-  return tables[schema.name] = new Table(rows, schema);
+
+  return tables[schema.name] = Table.applyLateJoins(
+    new Table(rows, schema),
+    tables,
+    false
+  );
 }
 
 function makeSpellByUnit (tables: TR): Table {
@@ -255,7 +264,7 @@ function makeSpellByUnit (tables: TR): Table {
   const schema = new Schema({
     name: 'SpellByUnit',
     key: '__rowId',
-    joins: 'Spell.spellId:Unit.unitId',
+    joins: 'Spell[spellId]+Unit[unitId]',
     flagsUsed: 0,
     overrides: {},
     rawFields: { spellId: 0, unitId: 1 },
@@ -292,7 +301,12 @@ function makeSpellByUnit (tables: TR): Table {
   }
   let di: number|undefined = undefined
   while ((di = delRows.pop()) !== undefined) attrs.rows.splice(di, 1);
-  return tables[schema.name] = new Table(rows, schema);
+
+  return tables[schema.name] = Table.applyLateJoins(
+    new Table(rows, schema),
+    tables,
+    false
+  );
 }
 
 // few things here:
@@ -321,16 +335,12 @@ const S_SUMNS = Array.from('1234', n => [`sum${n}`, `n_sum${n}`]);
 
 function makeUnitBySite (tables: TR): Table {
   const { MagicSite, SiteByNation, Unit } = tables;
-  if (!SiteByNation) throw new Error('do site by nation first');
-
-  // because we wont have the real one, use a temp. startSite -> nation map
-  // this wont really work if more than one nation starts with the same site
-  const snMap = new Map<number, number>();
+  if (!SiteByNation) throw new Error('do SiteByNation first');
 
   const schema = new Schema({
     name: 'UnitBySite',
     key: '__rowId',
-    joins: 'Unit.unitId:MagicSite.siteId', // TODO - tbh... kinda joins nation aswell
+    joins: 'MagicSite[siteId]+Unit[unitId]',
     flagsUsed: 0,
     overrides: {},
     rawFields: { siteId: 0, unitId: 1, recType: 2, recArg: 3 },
@@ -356,9 +366,6 @@ function makeUnitBySite (tables: TR): Table {
         index: 3,
         type: COLUMN.U8,
       }),
-
-
-      // TODO - MOAR STUFF
     ]
   });
 
@@ -369,14 +376,16 @@ function makeUnitBySite (tables: TR): Table {
       const mnr = site[k];
       // we assume the fields are always used in order
       if (!mnr) break;
-      let recArg = snMap.get(site.id as number);
-      if (!recArg) snMap.set(
-        site.id as number,
-        recArg = SiteByNation.rows.find(r => r.siteId === site.id)?.nationId as number
-      );
-      if (!recArg) {
-        console.error('mixed up cap-only site', k, site.id, site.name);
+      let recArg = 0;
+      const nj = site.SiteByNation?.find(({ siteId }) => siteId === site.id);
+      if (!nj) {
+        console.error(
+          'mixed up cap-only mon site', k, site.id, site.name, site.SiteByNation
+        );
         recArg = 0;
+      } else {
+        //console.log('niiiice', nj, site.SiteByNation)
+        recArg = nj.nationId;
       }
       rows.push({
         __rowId: rows.length,
@@ -390,14 +399,15 @@ function makeUnitBySite (tables: TR): Table {
       const mnr = site[k];
       // we assume the fields are always used in order
       if (!mnr) break;
-      let recArg = snMap.get(site.id as number);
-      if (!recArg) snMap.set(
-        site.id as number,
-        recArg = SiteByNation.rows.find(r => r.siteId === site.id)?.nationId as number
-      );
-      if (!recArg) {
-        console.error('mixed up cap-only site', k, site.id, site.name);
+      let recArg = 0;
+      const nj = site.SiteByNation?.find(({ siteId }) => siteId === site.id);
+      if (!nj) {
+        console.error(
+          'mixed up cap-only site', k, site.id, site.name, site.SiteByNation
+        );
         recArg = 0;
+      } else {
+        recArg = nj.nationId;
       }
       const unit = Unit.map.get(mnr);
       if (unit) {
@@ -482,11 +492,16 @@ function makeUnitBySite (tables: TR): Table {
     }
   }
   // yay!
-  return tables[schema.name] = new Table(rows, schema);
+  return tables[schema.name] = Table.applyLateJoins(
+    new Table(rows, schema),
+    tables,
+    false
+  );
+
 }
 
-function makeUnitByUnitSummon () {
-  const schemaArgs: SchemaArgs = {
+function makeUnitByUnitSummon (tables: TR) {
+  const schema = new Schema({
     name: 'UnitBySite',
     key: '__rowId',
     flagsUsed: 0,
@@ -505,11 +520,15 @@ function makeUnitByUnitSummon () {
         type: COLUMN.U16,
       }),
     ]
-  };
+  });
 
   const rows: any[] = [];
 
-  return new Table(rows, new Schema(schemaArgs));
+  return tables[schema.name] = Table.applyLateJoins(
+    new Table(rows, schema),
+    tables,
+    false,
+  );
 }
 
 // TODO - export these from somewhere more sensible
@@ -558,7 +577,7 @@ function makeUnitByNation (tables: TR): Table {
     flagsUsed: 0,
     overrides: {},
     rawFields: { nationId: 0, unitId: 1, recType: 2 },
-    joins: 'Nation.nationId:Unit.unitId',
+    joins: 'Nation[nationId]+Unit[unitId]',
     fields: ['nationId', 'unitId', 'recType'],
     columns: [
       new NumericColumn({
@@ -698,7 +717,7 @@ function makeUnitByNation (tables: TR): Table {
       case 142:
       case 143:
       case 144:
-        console.log('HERO FINDER FOUND', raw_value)
+        //console.log('HERO FINDER FOUND', raw_value)
         unitId = raw_value;
         unitType = UNIT_TYPE.COMMANDER | UNIT_TYPE.HERO;
         recType = REC_TYPE.HERO;
@@ -813,7 +832,12 @@ function makeUnitByNation (tables: TR): Table {
   FortTroopTypeByNation.rows.splice(0, Infinity);
   NonFortLeaderTypeByNation.rows.splice(0, Infinity);
   NonFortTroopTypeByNation.rows.splice(0, Infinity);
-  return new Table(rows, schema);
+
+  return tables[schema.name] = Table.applyLateJoins(
+    new Table(rows, schema),
+    tables,
+    false,
+  );
 }
 
 

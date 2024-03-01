@@ -12,11 +12,13 @@ import {
 } from './column';
 import { bytesToString, stringToBytes } from './serialize';
 import { tableDeco } from './util';
+import { joinToString, joinedByToString, stringToJoin, stringToJoinedBy } from './join';
 
 export type SchemaArgs = {
   name: string;
   key: string;
   joins?: string;
+  joinedBy?: string;
   columns: Column[],
   fields: string[],
   flagsUsed: number;
@@ -30,14 +32,15 @@ export class Schema {
   readonly name: string;
   readonly columns: Readonly<Column[]>;
   readonly fields: Readonly<string[]>;
-  readonly joins?: [string, string, string, string];
+  readonly joins?: [string, string][];
+  readonly joinedBy: [string, string][] = [];
   readonly key: string;
   readonly columnsByName: Record<string, Column>;
   readonly fixedWidth: number; // total bytes used by numbers + flags
   readonly flagFields: number;
   readonly stringFields: number;
   readonly bigFields: number;
-  constructor({ columns, name, flagsUsed, key, joins }: SchemaArgs) {
+  constructor({ columns, name, flagsUsed, key, joins, joinedBy }: SchemaArgs) {
     this.name = name;
     this.key = key;
     this.columns = [...columns].sort(cmpFields);
@@ -49,25 +52,8 @@ export class Schema {
       Math.ceil(flagsUsed / 8), // 8 flags per byte, natch
     );
 
-    if (joins) {
-      const [a, b, ...r] = joins.split(':');
-      const [aT, aF, ...aR] = a?.split('.');
-      const [bT, bF, ...bR] = b?.split('.');
-
-      if (!a || !b || r.length)
-        throw new Error(`bad join: ${joins}`);
-      if (!aT || !aF || aR.length)
-        throw new Error(`bad join left side ${a}`);
-      if (!bT || !bF || bR.length)
-        throw new Error(`bad join right side ${b}`);
-      if (aT === bT && aF === bF)
-        throw new Error(`cant join entity to itself (${joins})`)
-      if (!this.columnsByName[aF])
-        throw new Error(`bad join left side ${a}: unknown key "${aF}"`);
-      if (!this.columnsByName[bF])
-        throw new Error(`bad join right side ${b}: unknown key "${bF}"`);
-      this.joins = [aT, aF, bT, bF];
-    }
+    if (joins) this.joins = stringToJoin(joins);
+    if (joinedBy) this.joinedBy.push(...stringToJoinedBy(joinedBy));
 
     let o: number|null = 0;
     let f = true;
@@ -152,6 +138,7 @@ export class Schema {
     let name: string;
     let key: string;
     let joins: string|undefined;
+    let joinedBy: string|undefined;
     const bytes = new Uint8Array(buffer);
     [name, read] = bytesToString(i, bytes);
     i += read;
@@ -159,12 +146,16 @@ export class Schema {
     i += read;
     [joins, read] = bytesToString(i, bytes);
     i += read;
-
+    [joinedBy, read] = bytesToString(i, bytes);
+    i += read;
+    console.log('- BUH', name, key, joins, joinedBy)
     if (!joins) joins = undefined;
+    if (!joinedBy) joinedBy = undefined;
     const args = {
       name,
       key,
       joins,
+      joinedBy,
       columns: [] as Column[],
       fields: [] as string[],
       flagsUsed: 0,
@@ -286,9 +277,11 @@ export class Schema {
   }
 
   serializeJoins () {
-    if (!this.joins) return new Uint8Array(1);
-    const [aT, aF, bT, bF] = this.joins;
-    return stringToBytes(`${aT}.${aF}:${bT}.${bF}`);
+    let j = new Uint8Array(1);
+    let jb = new Uint8Array(1);
+    if (this.joins) j = stringToBytes(joinToString(this.joins));
+    if (this.joinedBy) jb = stringToBytes(joinedByToString(this.joinedBy));
+    return [...j, ...jb];
   }
 
   serializeRow (r: Row): Blob {

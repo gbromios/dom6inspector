@@ -1,6 +1,7 @@
+import { validateJoin } from './join';
 import { Schema } from './schema';
 import { tableDeco } from './util';
-export type RowData = string|number|boolean|bigint|(string|number|bigint)[];
+export type RowData = any; // fml
 export type Row = Record<string, RowData> & { __rowId: number };
 
 type TableBlob = { numRows: number, headerBlob: Blob, dataBlob: Blob };
@@ -19,6 +20,50 @@ export class Table {
       if (this.map.has(key)) throw new Error('key is not unique');
       this.map.set(key, row);
     }
+  }
+
+  static applyLateJoins (
+    jt: Table,
+    tables: Record<string, Table>,
+    addData: boolean
+  ): Table {
+    const joins = jt.schema.joins;
+
+    if (!joins) throw new Error('shit ass iditot whomst');
+    for (const j of joins) {
+      validateJoin(j, jt, tables);
+      const [tn, cn] = j;
+      const t = tables[tn];
+      const jb = t.schema.joinedBy;
+      if (jb.some(([jbtn, ]) => jbtn === tn))
+        throw new Error(`${tn} already joined ${j}`)
+      jb.push([jt.schema.name, cn]);
+    }
+
+    if (addData) {
+      //console.log('APPLYING')
+      for (const r of jt.rows) {
+        //console.log('- JOIN', r)
+        for (const [tn, cn] of jt.schema.joins) {
+          //console.log('  -', tn, 'ON', cn);
+          const jr = tables[tn].map.get(r[cn]);
+          if (!jr) {
+            console.warn(`MISSED A JOIN ${tn}[${cn}]: NOTHING THERE`, r);
+            continue;
+          }
+          if (jr[jt.name]) jr[jt.name].push(r);
+          else jr[jt.name] = [r];
+          //console.log('  >', jr.id, jr.name, jr[tn]);
+        }
+      }
+      //console.log(
+        //jt.schema.name,
+        //tables.MagicSite.rows.filter(r => r[jt.schema.name])
+        //[...tables.MagicSite.map.values()].find(r => r['SiteByNation'])
+      //)
+    }
+
+    return jt;
   }
 
   serialize (): [Uint32Array, Blob, Blob] {
@@ -103,31 +148,23 @@ export class Table {
 
     for (const t of tables) {
       if (!t.schema.joins) continue;
-      const [aT, aF, bT, bF] = t.schema.joins;
-      const tA = tableMap[aT];
-      const tB = tableMap[bT];
-      if (!tA) throw new Error(`${t.name} joins undefined table ${aT}`);
-      if (!tB) throw new Error(`${t.name} joins undefined table ${bT}`);
-      if (!t.rows.length) continue; // empty table i guess?
-      for (const r of t.rows) {
-        const idA = r[aF];
-        const idB = r[bF];
-        if (idA === undefined || idB === undefined) {
-          console.error(`row has a bad id?`, r);
-          continue;
+      for (const [aT, aF] of t.schema.joins) {
+        const tA = tableMap[aT];
+        if (!tA) throw new Error(`${t.name} joins undefined table ${aT}`);
+        if (!t.rows.length) continue; // empty table i guess?
+        for (const r of t.rows) {
+          const idA = r[aF];
+          if (idA === undefined) {
+            console.error(`row has a bad id?`, r);
+            continue;
+          }
+          const a = tA.map.get(idA);
+          if (a === undefined) {
+            console.error(`row has a missing id?`, a, idA, r);
+            continue;
+          }
+          (a[t.name] ??= []).push(r);
         }
-        const a = tA.map.get(idA);
-        const b = tB.map.get(idB);
-        if (a === undefined) {
-          console.error(`row has a missing id?`, a, idA, r);
-          continue;
-        }
-        if (b === undefined) {
-          console.error(`row has a missing id?`, b, idB, r);
-          continue;
-        }
-        (a[t.name] ??= []).push(r);
-        (b[t.name] ??= []).push(r);
       }
     }
     return tableMap;

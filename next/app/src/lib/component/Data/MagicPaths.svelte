@@ -114,6 +114,7 @@
       top: 1px;
     }
     & :global(.img-icon[data-name="magicH"]) { margin-right: 5px; }
+    & :global(.img-icon[data-name="research"]) { margin-right: -3px; }
     & :global(.img-icon[data-name="magicB"]) { position: relative; top: 2px; }
     & :global(.img-icon[data-name="custommagic"]) {
       margin-right: -1px;
