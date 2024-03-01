@@ -698,20 +698,24 @@ function makeUnitByNation (tables: TR): Table {
       case 142:
       case 143:
       case 144:
+        console.log('HERO FINDER FOUND', raw_value)
         unitId = raw_value;
         unitType = UNIT_TYPE.COMMANDER | UNIT_TYPE.HERO;
+        recType = REC_TYPE.HERO;
         break;
       case 145:
       case 146:
       case 149:
         unitId = raw_value;
         unitType = UNIT_TYPE.COMMANDER | UNIT_TYPE.HERO;
+        recType = REC_TYPE.MULTIHERO;
         break;
     }
 
     if (unitId == null) continue;
     delABNRows.push(iABN);
     unit ??= Unit.map.get(unitId);
+    if (unitType) unit.type |= unitType;
     if (!unit) console.error('more piss unit:', iABN, unitId);
     rows.push({
       unitId,

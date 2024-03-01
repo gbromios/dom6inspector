@@ -23,7 +23,7 @@ export async function loadDB (idb: IDBDatabase, version: number): Promise<DB> {
       )
     )
   );
-  return {
+  return window.__d = {
     version,
     idb,
     tables,

@@ -246,7 +246,8 @@ export class Schema {
       i += read;
       totalRead += read;
       // don't put falsy values on final objects. may revisit how this works later
-      if (c.isArray || v) row[c.name] = v;
+      //if (c.isArray || v) row[c.name] = v;
+      row[c.name] = v;
       //const w = globalThis._ROWS[this.name][__rowId][c.name] // srs biz
       /*
       if (w !== v) {

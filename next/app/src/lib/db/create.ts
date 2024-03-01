@@ -38,8 +38,9 @@ async function createTables(
   tables: Record<string, Table>
 ) {
   const stores = new Set(Array.from(db.objectStoreNames));
-  return Object.fromEntries(
+  return window.__d = Object.fromEntries(
     await Promise.all(
+    //await Promise.all(...)
       Object.entries(defs)
         .filter(([name]: [string, any]) => stores.has(name) && tables[name])
         .map(([name, columns]) => bulkInsert({
