@@ -9,12 +9,13 @@
   function toggleHover (h: boolean) { hoverExtend = h; }
   function togglePin (p: boolean) { pinExtend = p; }
 
-  const SRC_TYPE_ICON = {
+  const SRC_TYPE_ICON: Record<any, any> = {
+    0: { name: 'rpcost', title: 'Unit' },
     1: { name: 'rpcostCommander', title: 'Commander' },
-    2: { name: 'rpcost', title: 'Unit' },
-    3: { name: 'pretender', title: '' },
+    2: { name: 'pretender', title: 'WAT' },
+    3: { name: 'pretender', title: 'Pretender' },
   }
-  const mainIconName = SRC_TYPE_ICON[value.type as 1|2|3] as string;
+  const mainIcon = SRC_TYPE_ICON[value] as any || { name: 'mindless', title: 'idfk' };
 
 </script>
 
@@ -24,7 +25,7 @@
   on:click={function () { togglePin(!pinExtend); } }
 >
   <span class="unit-source">
-    <ImgIcon name={mainIconName} />
+    <ImgIcon {...mainIcon} />
   </span>
 </div>
 

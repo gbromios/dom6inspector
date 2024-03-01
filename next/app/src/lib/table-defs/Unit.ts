@@ -59,21 +59,20 @@ export const columns: Column[] = [
   rawValue('ap', 'Action Points'),
   rawValue('researchbonus', 'Research Bonus'),
   {
-    key: 'source',
-    labelText: 'Source',
+    key: 'type',
+    labelText: 'Type',
     size: 6,
-    //itemComponent: UnitSource,
+    itemComponent: UnitSource,
     getItemValue (item: any) {
-      return {
-        // oops
-        type: item.startdom ? 3 : item.rt ? 2 : 1
-      };
+      return item.type || 0;
     },
     getItemText (item: any) {
-      switch(item.source.type) {
-        case 1: return 'Unit';
-        case 2: return 'Cmdr.';
+      switch(item.type) {
+        case 0: return 'Unit';
+        case 1: return 'Cmdr.';
+        case 2:
         case 3: return 'God';
+        default: return '???';
       }
     }
   },
@@ -262,7 +261,7 @@ export const columns: Column[] = [
 export const defaults = new Set<string>([
   'id', 'name',
   //...'FAWESDNGB'
-  'source',
+  'type',
   'holy',
   'magicpaths',
 ])

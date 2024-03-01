@@ -25,7 +25,7 @@ async function dumpOne(key: string) {
 async function dumpAll () {
   const tables = await parseAll(csvDefs);
   // JOINS
-  //joinDumped(tables);
+  joinDumped(tables);
   const dest = './data/db.30.bin'
   const blob = Table.concatTables(tables);
   await writeFile(dest, blob.stream(), { encoding: null });
@@ -42,6 +42,7 @@ async function compareDumps(t: Table) {
     p = (r: any) => fields.slice(2).some(f => r[f]);
   } else if (fields[1] === 'ROW' && fields[2]) {
     n = Number(fields[2]) - 15;
+    fields.splice(1, 2)
     console.log(`ensure row ${fields[2]} is visible (${n})`);
     if (Number.isNaN(n)) throw new Error('ROW must be NUMBER!!!!');
   } else {

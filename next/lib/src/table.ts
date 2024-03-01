@@ -116,14 +116,18 @@ export class Table {
           console.error(`row has a bad id?`, r);
           continue;
         }
-        const a = tB.map.get(idA);
-        const b = tA.map.get(idB);
-        if (a === undefined || b === undefined) {
-          console.error(`row has a missing id?`, r);
+        const a = tA.map.get(idA);
+        const b = tB.map.get(idB);
+        if (a === undefined) {
+          console.error(`row has a missing id?`, a, idA, r);
           continue;
         }
-        (a[t.name] ??= []).push(idB);
-        (b[t.name] ??= []).push(idA);
+        if (b === undefined) {
+          console.error(`row has a missing id?`, b, idB, r);
+          continue;
+        }
+        (a[t.name] ??= []).push(r);
+        (b[t.name] ??= []).push(r);
       }
     }
     return tableMap;

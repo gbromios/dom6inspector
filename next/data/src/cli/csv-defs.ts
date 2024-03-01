@@ -5,46 +5,20 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
     name: 'Unit',
     key: 'id',
     ignoreFields: new Set([
-      'armor1',
-      'armor2',
-      'armor3',
-      'armor4',
-      'end',
-      'link1',
-      'link2',
-      'link3',
-      'link4',
-      'link5',
-      'link6',
-      'mask1',
-      'mask2',
-      'mask3',
-      'mask4',
-      'mask5',
-      'mask6',
-      'mounted', // deprecated
-      'nbr1',
-      'nbr2',
-      'nbr3',
-      'nbr4',
-      'nbr5',
-      'nbr6',
-      'rand1',
-      'rand2',
-      'rand3',
-      'rand4',
-      'rand5',
-      'rand6',
-      'reanimator.1', // turns out nothing actually references this field anyway?
-      'wpn1',
-      'wpn2',
-      'wpn3',
-      'wpn4',
-      'wpn5',
-      'wpn6',
-      'wpn7',
-      'summon',
-      'n_summon'
+      // combined into an array field
+      'armor1', 'armor2', 'armor3', 'armor4', 'end',
+      'wpn1', 'wpn2', 'wpn3', 'wpn4', 'wpn5', 'wpn6', 'wpn7',
+
+      // all combined into one array field
+      'link1', 'link2', 'link3', 'link4', 'link5', 'link6',
+      'mask1', 'mask2', 'mask3', 'mask4', 'mask5', 'mask6',
+      'nbr1',  'nbr2',  'nbr3',  'nbr4',  'nbr5',  'nbr6',
+      'rand1', 'rand2', 'rand3', 'rand4', 'rand5', 'rand6',
+
+      // deprecated
+      'mounted',
+      // redundant
+      'reanimator~1',
     ]),
     knownFields: {
       id: COLUMN.U16,
@@ -181,8 +155,8 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
       plainshape: COLUMN.U16,
       xpshape: COLUMN.U8,
       nametype: COLUMN.U8,
-      //summon: COLUMN.I16,
-      //n_summon: COLUMN.U8,
+      summon: COLUMN.I16,
+      n_summon: COLUMN.U8,
       batstartsum1: COLUMN.U16,
       batstartsum2: COLUMN.U16,
       domsummon: COLUMN.U16,
@@ -290,7 +264,7 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
       alchemy: COLUMN.U8,
       woundfend: COLUMN.U8,
       falsearmy: COLUMN.I8,
-      //summon5: COLUMN.U8,
+      summon5: COLUMN.U8,
       slaver: COLUMN.U16,
       deathparalyze: COLUMN.U8,
       corpseconstruct: COLUMN.U8,
@@ -321,11 +295,11 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
       mountainrec: COLUMN.U8,
       indepspells: COLUMN.U8,
       enchrebate50: COLUMN.U8,
-      //summon1: COLUMN.U16,
+      summon1: COLUMN.U16,
       randomspell: COLUMN.U8,
       insanify: COLUMN.U8,
-      //just a copy of reanimator 2
-      //'reanimator.1': COLUMN.U8,
+      //just a copy of reanimator...
+      //'reanimator~1': COLUMN.U8,
       defector: COLUMN.U8,
       batstartsum1d3: COLUMN.U16,
       enchrebate10: COLUMN.U8,
@@ -366,7 +340,7 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
       offscriptresearch: COLUMN.U8,
       unmountedspr: COLUMN.U32,
       exhaustion: COLUMN.U8,
-      mounted: COLUMN.BOOL,
+      // mounted: COLUMN.BOOL, // deprecated
       bow: COLUMN.BOOL,
       body: COLUMN.BOOL,
       foot: COLUMN.BOOL,
@@ -512,6 +486,21 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
       fixedname: COLUMN.STRING,
     },
     extraFields: {
+      type: (index: number, args: SchemaArgs) => {
+        const sdIndex = args.rawFields['startdom'];
+        return {
+          index,
+          name: 'type',
+          type: COLUMN.U16,
+          width: 2,
+          override(v, u, a) {
+            // have to fill in more stuff later, when we join rec types, oh well
+            // other types: commander, mercenary, hero, etc
+            if (u[sdIndex]) return 3; // god + commander
+            else return 0; // just a unit
+          },
+        }
+      },
       armor: (index: number, args: SchemaArgs) => {
         const indices = Object.entries(args.rawFields)
           .filter(e => e[0].match(/^armor\d$/))
@@ -594,13 +583,13 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
   '../../gamedata/BaseI.csv': {
     name: 'Item',
     key: 'id',
-    ignoreFields: new Set(['end']),
+    ignoreFields: new Set(['end', 'itemcost1~1', 'warning~1']),
   },
 
   '../../gamedata/MagicSites.csv': {
     name: 'MagicSite',
     key: 'id',
-    ignoreFields: new Set(['domconflict.1','end']),
+    ignoreFields: new Set(['domconflict~1','end']),
   },
   '../../gamedata/Mercenary.csv': {
     name: 'Mercenary',
@@ -739,7 +728,7 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
   },
   '../../gamedata/nonfort_troop_types_by_nation.csv': {
     key: '__rowId', // TODO - buh
-    name: 'NonFortLeaderTypeByNation',
+    name: 'NonFortTroopTypeByNation',
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/other_planes.csv': {

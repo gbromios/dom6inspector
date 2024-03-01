@@ -26,8 +26,6 @@ export type SchemaArgs = {
 
 type BlobPart = any; // ?????
 
-
-
 export class Schema {
   readonly name: string;
   readonly columns: Readonly<Column[]>;
