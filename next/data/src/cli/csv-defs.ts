@@ -499,7 +499,7 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
             if (u[sdIndex]) return 3; // god + commander
             else return 0; // just a unit
           },
-        }
+        };
       },
       armor: (index: number, args: SchemaArgs) => {
         const indices = Object.entries(args.rawFields)
@@ -720,6 +720,18 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
     key: 'id',
     name: 'Nation',
     ignoreFields: new Set(['end']),
+    extraFields: {
+      realm: (index: number) => {
+        return {
+          index,
+          name: 'realm',
+          type: COLUMN.U8,
+          width: 1,
+          // we will assign these later
+          override(v, u, a) { return 0; },
+        };
+      }
+    }
   },
   '../../gamedata/nonfort_leader_types_by_nation.csv': {
     key: '__rowId', // TODO - buh

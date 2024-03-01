@@ -41,7 +41,7 @@ export function validateJoin (
   if (jCol.type !== col.type)
     //throw new Error()
     console.warn(
-      `bad join "${
+      `iffy join "${
         s
       }": "${
         columnName

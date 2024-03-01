@@ -59,15 +59,18 @@ export const columns: Column[] = [
   rawValue('ap', 'Action Points'),
   rawValue('researchbonus', 'Research Bonus'),
   {
-    key: 'type',
-    labelText: 'Type',
+    key: 'source',
+    labelText: 'Source',
     size: 6,
     itemComponent: UnitSource,
     getItemValue (item: any) {
-      return item.type || 0;
+      const type = item.type;
+      const sources: any[] = [];
+
+      return { type, sources };
     },
     getItemText (item: any) {
-      switch(item.type) {
+      switch(item.source.type) {
         case 0: return 'Unit';
         case 1: return 'Cmdr.';
         case 2:
@@ -261,7 +264,7 @@ export const columns: Column[] = [
 export const defaults = new Set<string>([
   'id', 'name',
   //...'FAWESDNGB'
-  'type',
+  'source',
   'holy',
   'magicpaths',
 ])

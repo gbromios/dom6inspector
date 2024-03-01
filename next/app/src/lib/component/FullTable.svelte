@@ -16,9 +16,9 @@ const tcase = [
   1292, 1284, 1397, 1553, 1710, 1763, 1849,
 ]
 
-const items = tcase.map(i => table.items[i]);
+//const items = tcase.map(i => table.items[i]);
 
-//const items = table.items.slice(500, 1000);
+const items = table.items.slice(500, 1500);
 //const items = table.items.sort((a, b) => {
   //const aN = a.name.n.length + ((a.name.f + 2).length || 0)
   //const bN = b.name.n.length + ((b.name.f + 2).length || 0)

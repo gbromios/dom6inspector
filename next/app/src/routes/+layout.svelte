@@ -23,7 +23,7 @@ const links = [
     <a
       href={href}
       class="route {$page.url.pathname === href ? 'active' : ''}"
-    >{text}</a>
+    ><span class="text">{text}</span></a>
   {/each}
 </nav>
 <main>
@@ -36,16 +36,28 @@ nav {
   align-items: stretch;
 
   a.route {
-    border: 0.1em solid currentColor;
-    padding: 2px 0.5em 0;
+    color: var(--fg-color);
+    border: 0.25em solid var(--se-color);
+    //border-bottom: none;
+    padding: 2px 0.7em;
     display: flex;
     align-items: center;
     text-transform: uppercase;
     cursor: pointer;
     text-decoration: none;
+    letter-spacing: 0.1px;
   }
 
+  a.route:not(.active):hover {
+    //font-weight: bold;
+    color: var(--ln-color);
+    border-color: var(--ln-color);
+    letter-spacing: 0.1px;
+  }
   a.route.active {
+    background-color: var(--fg-color);
+    border-color: var(--fg-color);
+    color: var(--bg-color);
     font-weight: bold;
   }
 }

@@ -1,7 +1,7 @@
 <script lang="ts">
   import ImgIcon from '$lib/component/ImgIcon.svelte';
   export let item: any;
-  export let value: any;
+  export let value: { type: number, sources: any[] };
   item;
   let pinExtend: boolean = false;
   let hoverExtend: boolean = false;
@@ -15,7 +15,11 @@
     2: { name: 'pretender', title: 'WAT' },
     3: { name: 'pretender', title: 'Pretender' },
   }
-  const mainIcon = SRC_TYPE_ICON[value] as any || { name: 'mindless', title: 'idfk' };
+  const mainIcon = SRC_TYPE_ICON[value.type] as any ?? (
+    (value.type & 8) ?
+      { name: 'heroicability', title: 'Hero' } :
+      { name: 'mindless', title: 'idfk' }
+  );
 
 </script>
 

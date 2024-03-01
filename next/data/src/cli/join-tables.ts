@@ -1,10 +1,10 @@
-import { BoolColumn, COLUMN, NumericColumn, Schema, SchemaArgs, Table }
-  from 'dom6inspector-next-lib';
-
-function findTable (name: string, tables: Table[]): Table {
-  for (const t of tables) if (t.schema.name === name) return t;
-  throw new Error(`could not fild the table called "${name}"`);
-}
+import {
+  BoolColumn,
+  COLUMN,
+  NumericColumn,
+  Schema,
+  Table
+} from 'dom6inspector-next-lib';
 
 type TR = Record<string, Table>;
 export function joinDumped (tableList: Table[]) {
@@ -17,14 +17,49 @@ export function joinDumped (tableList: Table[]) {
     makeUnitByNation(tables),
   );
 
+  //dumpRealms(tables);
+
+  // tables have been combined~!
+  for (const t of [
+    tables.CoastLeaderTypeByNation,
+    tables.CoastTroopTypeByNation,
+    tables.FortLeaderTypeByNation,
+    tables.FortTroopTypeByNation,
+    tables.NonFortLeaderTypeByNation,
+    tables.NonFortTroopTypeByNation,
+    tables.PretenderTypeByNation,
+    tables.UnpretenderTypeByNation,
+    tables.Realm,
+  ]) {
+    Table.removeTable(t, tableList);
+  }
+}
+
+function dumpRealms ({ Realm, Unit }: TR) {
+  // seems like the realm csv is redundant?
+  console.log('REALM STATS:')
+  const combined = new Map<number, number>();
+
+  for (const u of Unit.rows) if (u.realm1) combined.set(u.id, u.realm1);
+
+  for (const { monster_number, realm } of Realm.rows) {
+    if (!combined.has(monster_number)) {
+      console.log(`${monster_number} REALM IS DEFINED ONLY IN REALMS CSV`);
+      combined.set(monster_number, realm);
+    } else if (combined.get(monster_number) !== realm) {
+      console.log(`${monster_number} REALM CONFLICT! unit.csv = ${combined.get(monster_number)}, realm.csv=${realm}`);
+    }
+  }
 }
 
 
 const ATTR_FARSUMCOM = 790; // lul why is this the only one??
-
 // TODO - reanimations aswell? twiceborn too? lemuria-esque freespawn? voidgate?
 // might have to add all that manually, which should be okay since it's not like
-// they're accessible to mods anyway
+// they're accessible to mods anyway?
+// soon TODO - summons, event monsters/heros
+/*
+not used, just keeping for notes
 export const enum REC_SRC {
   UNKNOWN = 0, // i.e. none found, probably indie pd?
   SUMMON_ALLIES = 1, // via #makemonsterN
@@ -42,6 +77,49 @@ export const enum REC_SRC {
   HERO = 13,
   PRETENDER = 14,
 }
+*/
+
+// TODO - export these from somewhere more sensible
+export const enum REC_TYPE {
+  FORT = 0, // normal i guess
+  PRETENDER = 1, // u heard it here
+  FOREIGN = 2,
+  WATER = 3,
+  COAST = 4,
+  FOREST = 5,
+  SWAMP = 6,
+  WASTE = 7,
+  MOUNTAIN = 8,
+  CAVE = 9,
+  PLAINS = 10,
+  HERO = 11,
+  MULTIHERO = 12,
+  PRETENDER_CHEAP_20 = 13,
+  PRETENDER_CHEAP_40 = 14,
+}
+
+export const enum UNIT_TYPE {
+  NONE = 0,      // just a unit...
+  COMMANDER = 1,
+  PRETENDER = 2,
+  CAPONLY = 4,
+  HERO = 8,
+}
+
+
+export const RealmNames = [
+  'None',
+  'North',
+  'Celtic',
+  'Mediterranean',
+  'Far East',
+  'Middle East',
+  'Middle America',
+  'Africa',
+  'India',
+  'Deeps',
+  'Default'
+];
 
   /*
 const SUM_FIELDS = [
@@ -83,7 +161,7 @@ const SUM_FIELDS = [
 */
 
 function makeNationSites(tables: TR): Table {
-  const { AttributeByNation } = tables;
+  const { AttributeByNation, Nation } = tables;
   const delRows: number[] = [];
   const schema = new Schema({
     name: 'SiteByNation',
@@ -124,9 +202,29 @@ function makeNationSites(tables: TR): Table {
     const { nation_number: nationId, attribute, raw_value: siteId } = row;
     let future: boolean = false;
     switch (attribute) {
+      // while we're here, lets put realm id right on the nation (extraField in def)
+      case 289:
+        //console.log(`national realm: ${nationId} -> ${siteId}`)
+        const nation = Nation.map.get(nationId);
+        if (!nation) {
+          console.error(`invalid nation id ${nationId} (no row in Nation)`);
+        } else {
+          // confusing! tons of nations have multiple realms? just use the most
+          // recent one I guess?
+          //if (nation.realm) {
+            //const prev = RealmNames[nation.realm];
+            //const next = RealmNames[siteId];
+            //console.error(`${nation.name} REALM ${prev} -> ${next}`);
+          //}
+          nation.realm = siteId;
+        }
+        delRows.push(i);
+        continue;
+      // future site
       case 631:
         future = true;
         // u know this bitch falls THRU
+      // start site
       case 52:
       case 100:
       case 25:
@@ -285,12 +383,10 @@ function makeSpellByUnit (tables: TR): Table {
 
   let __rowId = 0;
   const rows: any[] = [];
-  // TODO - how to differentiate unit vs commander summon? i forget if i figured
-  // this out already
   for (const [i, r] of attrs.rows.entries()) {
     const { spell_number: spellId, attribute, raw_value } = r;
     if (attribute === 731) {
-      console.log(`${spellId} IS RESTRICTED TO UNIT ${raw_value}`);
+      //console.log(`${spellId} IS RESTRICTED TO UNIT ${raw_value}`);
       const unitId = Number(raw_value);
       if (!Number.isSafeInteger(unitId))
         throw new Error(`     !!!!! TOO BIG UNIT !!!!! (${unitId})`);
@@ -383,6 +479,7 @@ function makeUnitBySite (tables: TR): Table {
           'mixed up cap-only mon site', k, site.id, site.name, site.SiteByNation
         );
         recArg = 0;
+        continue;
       } else {
         //console.log('niiiice', nj, site.SiteByNation)
         recArg = nj.nationId;
@@ -403,9 +500,10 @@ function makeUnitBySite (tables: TR): Table {
       const nj = site.SiteByNation?.find(({ siteId }) => siteId === site.id);
       if (!nj) {
         console.error(
-          'mixed up cap-only site', k, site.id, site.name, site.SiteByNation
+          'mixed up cap-only cmdr site', k, site.id, site.name, site.SiteByNation
         );
         recArg = 0;
+        continue;
       } else {
         recArg = nj.nationId;
       }
@@ -414,6 +512,7 @@ function makeUnitBySite (tables: TR): Table {
         unit.type |= 1; // flag as a commander
       } else {
         console.error('mixed up cap-only site (no unit in unit table?)', site);
+        continue;
       }
       rows.push({
         __rowId: rows.length,
@@ -531,46 +630,8 @@ function makeUnitByUnitSummon (tables: TR) {
   );
 }
 
-// TODO - export these from somewhere more sensible
-export const enum REC_TYPE {
-  FORT = 0, // normal i guess
-  PRETENDER = 1, // u heard it here
-  FOREIGN = 2,
-  WATER = 3,
-  COAST = 4,
-  FOREST = 5,
-  SWAMP = 6,
-  WASTE = 7,
-  MOUNTAIN = 8,
-  CAVE = 9,
-  PLAINS = 10,
-  HERO = 11,
-  MULTIHERO = 12,
-}
-
-export const enum UNIT_TYPE {
-  NONE = 0,      // just a unit...
-  COMMANDER = 1,
-  PRETENDER = 2,
-  CAPONLY = 4,
-  HERO = 8,
-}
-
 // TODO - not sure yet if I want to duplicate cap-only sites here?
 function makeUnitByNation (tables: TR): Table {
-  const {
-    AttributeByNation,
-    Unit,
-    CoastLeaderTypeByNation,
-    CoastTroopTypeByNation,
-    FortLeaderTypeByNation,
-    FortTroopTypeByNation,
-    NonFortLeaderTypeByNation,
-    NonFortTroopTypeByNation,
-    PretenderTypeByNation,
-    UnpretenderTypeByNation,
-  } = tables;
-
   const schema = new Schema({
     name: 'UnitByNation',
     key: '__rowId',
@@ -598,14 +659,30 @@ function makeUnitByNation (tables: TR): Table {
     ]
   });
 
+
   // TODO - pretenders
   // following the logic in ../../../../scripts/DMI/MNation.js
   //   1. determine nation realm(s) and use that to add pretenders
   //   2. use the list of "extra" added pretenders to add any extra
   //   3. use the unpretenders table to do opposite
 
-  const delABNRows: number[] = [];
+  // there's a lot goin on here
   const rows: any[] = [];
+
+  makeRecruitmentFromAttrs(tables, rows);
+  combineRecruitmentTables(tables, rows);
+  makePretenderByNation(tables, rows)
+
+  return tables[schema.name] = Table.applyLateJoins(
+    new Table(rows, schema),
+    tables,
+    false,
+  );
+}
+
+function makeRecruitmentFromAttrs (tables: TR, rows: any[]) {
+  const { AttributeByNation, Unit } = tables;
+  const delABNRows: number[] = [];
   for (const [iABN ,r]  of AttributeByNation.rows.entries()) {
     const { raw_value, attribute, nation_number } = r;
     let unit: any;
@@ -725,6 +802,7 @@ function makeUnitByNation (tables: TR): Table {
       case 145:
       case 146:
       case 149:
+        //console.log('multi hero!', raw_value)
         unitId = raw_value;
         unitType = UNIT_TYPE.COMMANDER | UNIT_TYPE.HERO;
         recType = REC_TYPE.MULTIHERO;
@@ -743,19 +821,24 @@ function makeUnitByNation (tables: TR): Table {
       nationId: nation_number,
     });
   }
+
   let di: number|undefined;
   while ((di = delABNRows.pop()) !== undefined)
     AttributeByNation.rows.splice(di, 1);
 
-  /*
-  first refer to the tables:
-  - fort_leader_types_by_nation
-  - nonfort_leader_types_by_nation
-  - fort_troop_types_by_nation
-  - nonfort_troop_types_by_nation
-  - coast_leader_types_by_nation (check landshape)
-  - coast_troop_types_by_nation (check landshape)
-  */
+
+}
+
+function combineRecruitmentTables (tables: TR, rows: any[]) {
+  const {
+    Unit,
+    CoastLeaderTypeByNation,
+    CoastTroopTypeByNation,
+    FortLeaderTypeByNation,
+    FortTroopTypeByNation,
+    NonFortLeaderTypeByNation,
+    NonFortTroopTypeByNation,
+  } = tables;
   for (const r of FortTroopTypeByNation.rows) {
     const { monster_number: unitId, nation_number: nationId } = r;
     rows.push({
@@ -801,8 +884,6 @@ function makeUnitByNation (tables: TR): Table {
     })
   }
 
-
-
   for (const r of NonFortTroopTypeByNation.rows) {
     const { monster_number: unitId, nation_number: nationId } = r;
     rows.push({
@@ -825,19 +906,79 @@ function makeUnitByNation (tables: TR): Table {
       recType: REC_TYPE.FOREIGN,
     })
   }
-  // tables have been combined~!
-  CoastLeaderTypeByNation.rows.splice(0, Infinity);
-  CoastTroopTypeByNation.rows.splice(0, Infinity);
-  FortLeaderTypeByNation.rows.splice(0, Infinity);
-  FortTroopTypeByNation.rows.splice(0, Infinity);
-  NonFortLeaderTypeByNation.rows.splice(0, Infinity);
-  NonFortTroopTypeByNation.rows.splice(0, Infinity);
+}
 
-  return tables[schema.name] = Table.applyLateJoins(
-    new Table(rows, schema),
-    tables,
-    false,
+function makePretenderByNation (tables: TR, rows: any[]) {
+  const {
+    PretenderTypeByNation,
+    UnpretenderTypeByNation,
+    Nation,
+    Unit,
+    Realm,
+    AttributeByNation,
+  } = tables;
+
+  // TODO - delete matching rows from the table
+  const cheapAttrs = AttributeByNation.rows.filter(
+    ({ attribute: a }) => a === 314 || a === 315
   );
+  const cheap = new Map<number, Map<number, 20|40>>();
+  for (const { nation_number, attribute, raw_value } of cheapAttrs) {
+    if (!cheap.has(raw_value)) cheap.set(raw_value, new Map());
+    const cUnit = cheap.get(raw_value)!;
+    cUnit.set(nation_number, attribute === 314 ? 20 : 40);
+  }
+
+  // make a map first, we will convert to rows at the end
+  const pretenders = new Map(Nation.rows.map(r => [r.id, new Set<number>()]));
+  // monsters for each realm
+  const r2m = new Map<number, Set<number>>();
+  for (let i = 1; i <= 10; i++) r2m.set(i, new Set());
+  for (const { monster_number, realm } of Realm.rows)
+    r2m.get(realm)!.add(monster_number);
+
+  // first do realm-based pretenders
+  for (const { realm, id } of Nation.rows) {
+    if (!realm) continue;
+    for (const mnr of r2m.get(realm)!) {
+      pretenders.get(id)!.add(mnr);
+    }
+  }
+
+  // then add pretenders by nation
+  for (const { monster_number, nation_number } of PretenderTypeByNation.rows) {
+    pretenders.get(nation_number)!.add(monster_number);
+  }
+  // then unpretenders by nation
+  for (const { monster_number, nation_number } of UnpretenderTypeByNation.rows) {
+    pretenders.get(nation_number)!.delete(monster_number);
+  }
+
+  const addedUnits = new Map<number, any>();
+
+  for (const [nationId, unitIds] of pretenders) {
+    for (const unitId of unitIds) {
+      if (!addedUnits.has(unitId)) addedUnits.set(unitId, Unit.map.get(unitId));
+      const discount = cheap.get(unitId)?.get(nationId) ?? 0;
+      const recType = discount === 40 ? REC_TYPE.PRETENDER_CHEAP_40 :
+        discount === 20 ? REC_TYPE.PRETENDER_CHEAP_20 :
+        REC_TYPE.PRETENDER;
+      rows.push({
+        unitId,
+        recType,
+        recArg: nationId,
+        __rowId: rows.length,
+      });
+    }
+  }
+
+  for (const [id, u] of addedUnits) {
+    if (!u) { console.warn('fake unit id?', id); continue }
+    if (!u.startdom || !(u.type & UNIT_TYPE.PRETENDER)) {
+      console.warn('not a pretender?', u.name, u.type, u.startdom);
+    }
+    u.type |= UNIT_TYPE.PRETENDER;
+  }
 }
 
 

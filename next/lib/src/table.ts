@@ -66,6 +66,19 @@ export class Table {
     return jt;
   }
 
+  static removeTable (table: Table, list?: Table[], map?: Record<string, Table>) {
+    if (list) {
+      const index = list.indexOf(table);
+      if (index === -1) throw new Error(`table ${table.name} is not in the list`);
+      list.splice(index, 1);
+    }
+
+    if (map) {
+      if (table.name in map) delete map[table.name];
+      else throw new Error(`table ${table.name} is not in the map`);
+    }
+  }
+
   serialize (): [Uint32Array, Blob, Blob] {
     // [numRows, headerSize, dataSize], schemaHeader, [row0, row1, ... rowN];
     const schemaHeader = this.schema.serializeHeader();
