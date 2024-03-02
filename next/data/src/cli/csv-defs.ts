@@ -1,5 +1,6 @@
 import { COLUMN, SchemaArgs } from 'dom6inspector-next-lib';
 import type { ParseSchemaOptions } from './parse-csv'
+import { readFileSync } from 'node:fs';
 export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
   '../../gamedata/BaseU.csv': {
     name: 'Unit',
@@ -667,11 +668,13 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
     name: 'SpellEffectInfo',
     ignoreFields: new Set(['test']),
   },
+  /*
   '../../gamedata/effects_spells.csv': {
     key: 'record_id',
     name: 'EffectSpell',
     ignoreFields: new Set(['end']),
   },
+  */
   '../../gamedata/effects_weapons.csv': {
     name: 'EffectWeapon',
     key: 'record_id',
@@ -782,6 +785,38 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
     name: 'Spell',
     key: 'id',
     ignoreFields: new Set(['end']),
+    preTransform (rawFields: string[], rawData: string[][]) {
+      // columns to copy over from effects_spells to spells...
+      const IDX = rawFields.indexOf('effect_record_id');
+      const TXF = [1,2,3,5,6,7,8,9,10,11,12]
+      if (IDX === -1) throw new Error('no effect_record_id?')
+
+      function replaceRef (dest: string[], src: string[]) {
+        dest.splice(IDX, 1, ...TXF.map(i => src[i]));
+      }
+
+      const [effectFields, ...effectData] = readFileSync(
+          `../../gamedata/effects_spells.csv`,
+          { encoding: 'utf8' }
+        ).split('\n')
+        .filter(line => line !== '')
+        .map(line => line.split('\t'));
+
+      replaceRef(rawFields, effectFields);
+
+      for (const [i, f] of rawFields.entries()) console.log(i, f)
+
+      for (const dest of rawData) {
+        const erid = Number(dest[IDX]);
+        const src = effectData[erid];
+        if (!src) {
+          console.error('NOPE', dest, erid);
+          throw new Error('no thanks');
+        } else {
+          replaceRef(dest, src);
+        }
+      }
+    }
   },
   '../../gamedata/terrain_specific_summons.csv': {
     name: 'TerrainSpecificSummon',

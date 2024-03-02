@@ -15,6 +15,7 @@ export function joinDumped (tableList: Table[]) {
     makeSpellByNation(tables),
     makeSpellByUnit(tables),
     makeUnitByNation(tables),
+    makeUnitByUnitSummon(tables),
   );
 
   //dumpRealms(tables);
@@ -120,46 +121,6 @@ export const RealmNames = [
   'Deeps',
   'Default'
 ];
-
-  /*
-const SUM_FIELDS = [
-  // these two combined seem to be summon #makemonsterN
-  'summon', 'n_summon',
-  // this is used by the ghoul lord only, and it should actually be `n_summon = 5`
-  'summon5',
-  // auto summon 1/month, as per mod commands, used only by false prophet and vine guy?
-  'summon1',
-
-  // dom summon commands
-  'domsummon',
-  'domsummon2',
-  'domsummon20',
-  'raredomsummon',
-
-  'batstartsum1',
-  'batstartsum2',
-  'batstartsum3',
-  'batstartsum4',
-  'batstartsum5',
-  'batstartsum1d3',
-  'batstartsum1d6',
-  'batstartsum2d6',
-  'batstartsum3d6',
-  'batstartsum4d6',
-  'batstartsum5d6',
-  'batstartsum6d6',
-  'battlesum5', // per round
-
-  //'onisummon', we dont really care about this one because it doesnt tell us
-  //  about which monsters are summoned
-  // 'heathensummon', idfk?? https://illwiki.com/dom5/user/loggy/slaver
-  // 'coldsummon', unused
-  'wintersummon1d3', // vamp queen, not actually a (documented) command?
-
-  'turmoilsummon', // also not a command ~ !
-]
-*/
-
 function makeNationSites(tables: TR): Table {
   const { AttributeByNation, Nation } = tables;
   const delRows: number[] = [];
@@ -420,7 +381,7 @@ export enum SITE_REC {
   REC_COM = 3,
   NAT_MON = 4, // arg is nation
   NAT_COM = 5, // same
-  SUMMON = 8, // arg is level requirement
+  SUMMON = 8, // arg is level requirement (include path?)
 }
 
 const S_HMONS = Array.from('12345', n => `hmon${n}`);
@@ -599,14 +560,131 @@ function makeUnitBySite (tables: TR): Table {
 
 }
 
+  /*
+const SUM_FIELDS = [
+  // these two combined seem to be summon #makemonsterN
+  'summon', 'n_summon',
+  // this is used by the ghoul lord only, and it should actually be `n_summon = 5`
+  'summon5',
+  // auto summon 1/month, as per mod commands, used only by false prophet and vine guy?
+  'summon1',
+
+  // dom summon commands
+  'domsummon',
+  'domsummon2',
+  'domsummon20',
+  'raredomsummon',
+
+  'batstartsum1',
+  'batstartsum2',
+  'batstartsum3',
+  'batstartsum4',
+  'batstartsum5',
+  'batstartsum1d3',
+  'batstartsum1d6',
+  'batstartsum2d6',
+  'batstartsum3d6',
+  'batstartsum4d6',
+  'batstartsum5d6',
+  'batstartsum6d6',
+  'battlesum5', // per round
+
+  //'onisummon', we dont really care about this one because it doesnt tell us
+  //  about which monsters are summoned
+  // 'heathensummon', idfk?? https://illwiki.com/dom5/user/loggy/slaver
+  // 'coldsummon', unused
+  //'wintersummon1d3', // vamp queen, not actually a (documented) command?
+  //'turmoilsummon', // also not a command ~ !
+]
+*/
+
+
+export const enum SUMMON {
+  UNKNOWN = 0,
+  ALLIES = 1, // via #makemonsterN (and the single summon5 in the csv data)
+  DOM = 2, // via #[rare]domsummonN
+  AUTO = 3, // via #summon1 (goes up to 5)
+  BATTLE_ROUND = 4, // via #batstartsumN or #battlesum
+  BATTLE_START = 5, // via #batstartsumN or #battlesum
+  TEMPLE_TRAINER = 6, // via #templetrainer, value is hard coded to 1859...
+  WINTER = 7, // not a command, used once by vampire queen
+}
+
+function D_SUMMON (t: SUMMON, s: number): string {
+  switch (t) {
+    case SUMMON.ALLIES: return `#makemonster${s}`;
+    case SUMMON.DOM: {
+      switch (s) {
+        case 0: return `#domsummon`;
+        case 1: return `#domsummon2`;
+        case 2: return `#domsummon20`;
+        case 3: return `#raredomsummon`;
+        default: return `DOM ?? ${t}:${s}`;
+      }
+    }
+    case SUMMON.AUTO: return `#summon${s}`;
+    case SUMMON.BATTLE_ROUND: return `#battlesum${s}`;
+    case SUMMON.BATTLE_START: {
+      const n = s & 63;
+      return s & 128 ? `#batstartsum${n}d6` :
+        s & 64 ? `#batstartsum1d3` :
+        `#batstartsum${n}`;
+    }
+    case SUMMON.TEMPLE_TRAINER: return `#templetrainer`;
+    case SUMMON.WINTER: return `(1d3 at the start of winter)`;
+    default: return `IDK??? t=${t}; s=${s}`
+  }
+}
+
+// I don't think these are defined directly in the data (just a name), but we
+// could maintain a table + join
+const MONTAGS = {
+  // fay folk
+  [-26]: [],
+  // dwarfs
+  [-21]: [3425, 3426, 3427, 3428],
+  //Random Bird (Falcon, Black Hawk, Swan or Strange Bird)
+  [-20]: [3371, 517, 2929, 3327],
+  // Lions
+  [-19]: [3363, 3364, 3365, 3366],
+  // TODO - need to figure out which monsters these really are (crossbreends)
+  [-12]: [530], // 3% good?
+  [-11]: [530], // bad
+  [-10]: [530], // good
+  // Yatas and Pairikas
+  [-17]: [2632, 2633, 2634, 2636],
+  // Celestial Yazad
+  [-16]: [2620, 2621, 2622, 2623, 2624, 2625],
+  // Random Bug
+  [-9]: [],
+  // Doom Horror
+  [-8]: [],
+  // Horror
+  [-7]: [],
+  // Lesser Horror
+  [-6]: [],
+  // Random Animal
+  [-5]: [],
+  // Ghoul
+  [-4]: [],
+  // Soultrap Ghost
+  [-3]: [],
+  // Longdead
+  [-2]: [],
+  // Soulless
+  [-1]: [],
+}
+
 function makeUnitByUnitSummon (tables: TR) {
+  const { Unit } = tables;
   const schema = new Schema({
     name: 'UnitBySite',
     key: '__rowId',
-    flagsUsed: 0,
+    joins: 'Unit[unitId]+Unit[summonerId]',
+    flagsUsed: 1,
     overrides: {},
-    rawFields: { unitId: 0, summonerId: 1 },
-    fields: ['unitId', 'summonerId'],
+    fields: ['unitId', 'summonerId', 'summonType', 'summonStrength', 'asTag'],
+    rawFields: { unitId: 0, summonerId: 1, summonType: 2, summonStrength: 3, asTag: 4},
     columns: [
       new NumericColumn({
         name: 'unitId',
@@ -618,10 +696,116 @@ function makeUnitByUnitSummon (tables: TR) {
         index: 1,
         type: COLUMN.U16,
       }),
+      new NumericColumn({
+        name: 'summonType',
+        index: 2,
+        type: COLUMN.U8,
+      }),
+      new NumericColumn({
+        name: 'summonStrength',
+        index: 3,
+        type: COLUMN.U8,
+      }),
+      new BoolColumn({
+        name: 'summonStrength',
+        index: 3,
+        type: COLUMN.BOOL,
+        bit: 0,
+        flag: 1,
+      }),
     ]
   });
 
   const rows: any[] = [];
+
+  function printRow (sid: number, uid: number, t: SUMMON, s: number, p?: string) {
+    p ??= '  -';
+    const sn = Unit.map.get(sid).name
+    const un = Unit.map.get(uid).name
+    const d = D_SUMMON(t, s);
+    console.log(`${p} ${d} ${sn} -> ${un}`);
+  }
+  function addRow (
+    summonType: SUMMON,
+    summonStrength: number,
+    summonerId: number,
+    target: number,
+  ) {
+    if (target > 0) {
+      const r = {
+        __rowId: rows.length,
+        summonerId,
+        summonType,
+        summonStrength,
+        asTag: false,
+        unitId: target,
+      };
+      printRow(r.summonerId, r.unitId, r.summonType, r.summonStrength)
+      rows.push(r);
+    } else if (target < 0) {
+      console.log('  MONTAG ' + target + ' [');
+      if (!MONTAGS[target]?.length) console.log('    (MISSING!)');
+      else for (const unitId of MONTAGS[target]) {
+        const r = {
+          __rowId: rows.length,
+          summonerId,
+          summonType,
+          summonStrength,
+          asTag: true,
+          unitId,
+        }
+        printRow(r.summonerId, r.unitId, r.summonType, r.summonStrength, '     >');
+        rows.push(r);
+      }
+      console.log('  ]\n');
+    } else {
+      console.error(`      !!!!! ${Unit.map.get(summonerId).name} SUMMONS ID 0 !!`)
+      return;
+    }
+  }
+
+  for (const summoner of Unit.rows) {
+    if (summoner.summon)
+      addRow(SUMMON.ALLIES, summoner.n_summon, summoner.id, summoner.summon);
+
+    if (summoner.summon5)
+      addRow(SUMMON.ALLIES, 5, summoner.id, summoner.summon5);
+
+    if (summoner.summon1)
+      addRow(SUMMON.AUTO, 1, summoner.id, summoner.summon1);
+
+    // value is hard coded to 1859 (thats the only thing summoned in vanilla)
+    if (summoner.templetrainer)
+      addRow(SUMMON.TEMPLE_TRAINER, 0, summoner.id, 1859);
+    if (summoner.wintersummon1d3)
+      addRow(SUMMON.WINTER, 0, summoner.id, summoner.wintersummon1d3);
+
+    if (summoner.domsummon)
+      addRow(SUMMON.DOM, 0, summoner.id, summoner.domsummon);
+    if (summoner.domsummon2)
+      addRow(SUMMON.DOM, 1, summoner.id, summoner.domsummon2);
+    if (summoner.domsummon20)
+      addRow(SUMMON.DOM, 2, summoner.id, summoner.domsummon20);
+    if (summoner.raredomsummon)
+      addRow(SUMMON.DOM, 3, summoner.id, summoner.raredomsummon);
+
+    for (const s of [/*1,2,3,4,*/5]) { // only 5 in the csv
+      const k = `battlesum${s}`;
+      if (summoner[k]) addRow(SUMMON.BATTLE_ROUND, s, summoner.id, summoner[k]);
+    }
+
+    for (const s of [1,2,3,4,5]) {
+      const k = `batstartsum${s}`;
+      if (summoner[k]) addRow(SUMMON.BATTLE_START, s, summoner.id, summoner[k]);
+    }
+    for (const s of [1,2,3,4,5,6/*,7,8,9*/]) { // vanilla only uses up to 6
+      const k = `batstartsum${s}d6`;
+      if (summoner[k]) addRow(SUMMON.BATTLE_START, s|128, summoner.id, summoner[k]);
+    }
+    if (summoner.batstartsum1d3)
+      addRow(SUMMON.BATTLE_START, 64, summoner.id, summoner.batstartsum1d3)
+  }
+
 
   return tables[schema.name] = Table.applyLateJoins(
     new Table(rows, schema),
@@ -981,4 +1165,702 @@ function makePretenderByNation (tables: TR, rows: any[]) {
   }
 }
 
+// useful data from the original formatter:
+//  // Marverni gets Iron Boars 924 -> 1808
+//
+//function list_summons(spell, effect) {
+//
+//  if (!arr) {
+//    arr = [spell.damage];
+//  }
+//  //create array of refs
+//  var tokens = [];
+//  for (var i=0, uid; uid= arr[i];  i++)
+//    tokens.push( show_summon(uid, 1) );
+//
+//  //comma separated & one per line
+//  return tokens.join(', <br />');
+//}
+//
+
+// idk tbh
+const SPECIAL_SUMMON = {
+  // effect 76
+  tartarianGate:         [771, 772, 773, 774, 775, 776, 777],
+  // effect 116
+  unleashImprisonedOnes: [2498, 2499, 2500],
+  // spell 480  weird double summon (eff 37)
+  angelichost:           [465, 543],
+  // spell 1410 weird double summon (eff 37)
+  hordefromhell:         [304, 303],
+  // 859: iron pig + iron boar for ea marverni...
+  ironswine:             [924, 1808],
+  // effect 81 (global) and damage === 43
+  ghostShipArmada:       [3348, 3349, 3350, 3351, 3352],
+};
+// from effect 89, key is damage/raw_argument
+const UNIQUE_SUMMON = {
+  // Bind Ice Devil
+  1:  [306, 821,  822, 823, 824, 825],
+  // Bind Arch Devil
+  2:  [305, 826, 827, 828, 829],
+  // Bind Heliophagus
+  3:  [492, 818, 819, 820],
+  // King of Elemental Earth
+  4:  [906, 469],
+  // Father Illearth
+  5:  [470],
+  // Queen of Elemental Water
+  6:  [359, 907, 908],
+  // Queen of Elemental Air
+  7:  [563, 911, 912],
+  // King of Elemental Fire
+  8:  [631, 910],
+  // King of Banefires
+  9:  [909],
+  // Bind Demon Lord
+  10: [446, 810, 900, 1405, 2277, 2278],
+  // Awaken Treelord
+  11: [621, 980, 981],
+  // Call Amesha Spenta
+  12: [1375, 1376, 1377, 1492, 1493, 1494],
+  // Summon Tlaloque
+  13: [1484, 1485, 1486, 1487],
+  // Release Lord of Civilization
+  14: [2063, 2065, 2066, 2067, 2064, 2062],
+  // ????
+  15: [ ],
+  // greater daeva
+  16: [2612, 2613, 2614, 2615, 2616, 2617],
+  // Balam
+  17: [2765, 2768, 2771, 2774],
+  // Chaac
+  18: [2778, 2779, 2780, 2781],
+  //Sanguine Heritage
+  19: [1019, 1035, 3244, 3245, 3251, 3252, 3253, 3255],
+  // Mandeha
+  20: [1748, 3635, 3636]
+};
+
+// effect 100
+const TERRAIN_SUMMON = {
+  // Hidden in Snow
+  1: [1201, 1200, 1202, 1203],
+  // Hidden in Sand
+  2: [1979, 1978, 1980, 1981],
+  // Hidden Underneath
+  3: [2522, 2523, 2524, 2525]
+};
+/*
+
+spell finder:
+const sp = __t.Spell
+function findSp(e, rit, sel = -3) {
+    console.log(
+        Array.from(
+            sp.filterRows(r => r.effect_number === e && (
+                rit == null || (rit && r.ritual) || (!rit && !r.ritual))
+            ),
+            r => `-  ${r.ritual ? 'R' : 'C' } ${r.id} ${r.name} : ${r.raw_argument}`
+        ).slice(sel).join('\n')
+    )
+}
+EFFECT 0:
+
+-  C 484 ... : 0
+-  C 631 ... : 0
+-  C 632 ... : 0
+EFFECT 109:
+
+-  C 1 Minor Area Shock : 1
+-  C 120 Minor Blunt Damage : 8
+-  C 669 Poison Darts : 9
+EFFECT 2:
+
+-  C 1419 Harm : 1000
+-  C 1437 Life for a Life : 5025
+-  C 1447 farkill: Infernal Fumes : 1006
+EFFECT 3:
+
+-  C 800 Torpor : 5010
+-  C 1009 Ghost Grip : 2023
+-  C 1275 Steal Breath : 5035
+EFFECT 600:
+
+-  C 4 Mark : 261
+-  C 1265 Horror Mark : 261
+EFFECT 4:
+
+-  C 260 Scare Spirits : 2
+-  C 424 Tune of Fear : 3
+-  C 1305 Terror : 3
+EFFECT 7:
+
+-  C 844 Blood Poisoning : 2011
+-  C 868 Venomous Death : 3019
+-  C 978 Maggots : 50
+EFFECT 1: (SUMMON MONSTER)
+-  R 1452 Infernal Tempest : 632
+-  R 1453 Forces of Ice : 449
+-  R 1454 Infernal Crusade : 489
+-  C 1184 Horde of Skeletons : -2
+-  C 1385 Summon Imps : 303
+-  C 1417 Summon Illearth : 3756
+EFFECT 11:
+
+-  C 1351 Plague : 8
+-  C 1355 Mass Confusion : 17179869184
+-  C 1357 Hydrophobia : 128
+EFFECT 15:
+
+-  C 14 Returning : 1
+-  C 1278 Returning : 1
+-  C 1350 Vortex of Returning : 1
+EFFECT 66:
+
+-  C 231 Paralyzation : 10
+-  C 461 Parting of the Soul : 5010
+-  C 1300 Paralyze : 9042
+EFFECT 10:
+-  R 1165 Simulacrum : 9007199254740992
+-  C 1403 Blood Lust : 128
+-  C 1434 Purify Blood : 288230376151711744
+-  C 1436 Rush of Strength : 128
+
+EFFECT 38: (REMOTE SUMMON UNIT TEMP)
+-  R 1078 Ghost Riders : 189
+-  R 1416 Send Lesser Horror : -6
+-  R 1455 Send Horror : -7
+
+EFFECT 21: (SUMMON COMMANDER)
+-  R 1384 Bind Shadow Imp : 2287
+-  R 1412 Bind Succubus : 811
+-  R 1444 Curse of Blood : 404
+-  C 56 Grow Lich : 960
+-  C 58 Summon Qarin : 3471
+-  C 80 Open Soul Trap : -18
+EFFECT 81:
+-  R 1440 Blood Vortex : 87
+-  R 1449 The Looming Hell : 42
+-  R 1456 Astral Corruption : 57
+-  C 1362 Soul Drain : 5
+-  C 1377 Legion's Demise : 143
+-  C 1421 Blood Rain : 112
+
+EFFECT 37: (PERMANENT REMOTE SUMMON)
+-  R 1257 Army of the Dead : -2
+-  R 1410 Horde from Hell : 303
+-  R 1428 Plague of Locusts : 2794
+
+EFFECT 23:
+-  R 1073 Dragon Master : 1073741824
+-  R 1159 Twiceborn : 4194304
+-  R 1179 Ritual of Returning : 8388608
+-  C 1381 Sabbath Master : 576460752303423488
+-  C 1382 Sabbath Slave : 1152921504606846976
+-  C 1394 Hell Power : 131072
+EFFECT 82:
+-  R 1397 Infernal Circle : 89
+-  R 1408 Blood Fecundity : 94
+-  R 1432 Dome of Corruption : 68
+
+EFFECT 105:
+
+-  C 71 Disbelieve : 999
+EFFECT 28:
+
+-  C 1365 Undead Mastery : 999
+-  C 1372 Master Enslave : 999
+-  C 1375 Beast Mastery : 999
+EFFECT 101:
+-  R 86 age three years : 3
+-  R 288 Thousand Year Ginseng : -5
+-  R 1420 Rejuvenate : -10
+
+EFFECT 112:
+-  R 91 Kill Caster : 9999
+-  R 1316 Purifying Flames : 20
+
+EFFECT 113:
+-  R 94 Astral Harpoon : 0
+
+EFFECT 128:
+
+-  C 647 Bewitching Lights : 100
+-  C 660 Storm Wind : 2013
+-  C 1270 Fascination : 100
+EFFECT 48:
+-  R 1297 Auspex : 1
+-  R 1299 Gnome Lore : 3
+-  R 1388 Bowl of Blood : 8
+
+EFFECT 17:
+
+-  C 216 Sermon of Courage : 1
+-  C 242 Fanaticism : 1
+EFFECT 99:
+
+-  C 227 Petrification : 999
+-  C 858 Petrify : 999
+EFFECT 42:
+-  R 1413 Wrath of Pazuzu : 14
+-  R 1418 Rain of Toads : 6
+-  R 1431 Send Dream Horror : 12
+
+EFFECT 13:
+
+-  C 1145 Heal : 10020
+-  C 1157 Astral Healing : 2
+-  C 1380 Blood Heal : 50
+EFFECT 8:
+
+-  C 258 Minor Reinvigoration : 10
+-  C 298 Meditation Sign : 15
+-  C 1383 Reinvigoration : 200
+EFFECT 136:
+-  R 262 Curse Tablet : 2
+-  R 494 Seith Curse : 2
+
+EFFECT 511:
+-  R 263 Blessing of the God-slayer : 654
+-  R 278 Taurobolium : 651
+
+EFFECT 137: (SUMMON, ALIVE ONLY)
+-  R 266 Call Ladon : 3167
+
+EFFECT 93:
+-  R 272 Daughter of Typhon : 1822
+-  R 1072 Call the Eater of the Dead : 994
+
+EFFECT 85:
+-  R 277 Epopteia : 94
+
+EFFECT 111:
+-  R 289 Internal Alchemy : 15
+
+EFFECT 130: (A KIND OF Polymorph)
+-  R 290 Hannya Pact : 3070
+-  R 291 Greater Hannya Pact : 1432
+
+EFFECT 29:
+
+-  C 1324 Charm Animal : 999
+-  C 1354 Charm : 999
+-  C 1409 Hellbind Heart : 999
+EFFECT 127: (CREATES FOUL GUYS)
+-  R 320 Infernal Breeding : 1
+
+EFFECT 50: (SUMMON ASSASSIN)
+-  R 449 Send Aatxe : 3629
+-  R 1067 Earth Attack : 3741
+-  R 1422 Infernal Disease : 1662
+
+EFFECT 119:
+-  R 326 Send Vodyanoy : 1953
+
+EFFECT 63:
+-  R 901 Wizard's Tower : 24
+-  R 1059 Living Castle : 9
+-  R 1439 Three Red Seconds : 25
+
+EFFECT 25:
+
+-  C 345 Strange Fire : 1006
+-  C 448 Holy Pyre : 1005
+
+EFFECT 89: (UNIQUE SUMMON!)
+-  R 1430 Father Illearth : 5
+-  R 1438 Bind Heliophagus : 3
+-  R 1450 Bind Demon Lord : 10
+
+EFFECT 73:
+
+-  C 453 Iron Darts : 13
+-  C 454 Iron Blizzard : 10
+EFFECT 19:
+-  R 490 Mirror Walk : 1
+-  R 1303 Teleport : 1
+
+EFFECT 141:
+-  R 537 Call the Birds of Splendor : 3382
+
+EFFECT 501:
+-  R 1061 Lore of Legends : 1086
+-  C 547 Scorching Wind : 250
+
+EFFECT 116:
+-  R 607 Unleash Imprisoned Ones : 1
+
+EFFECT 125:
+-  R 628 Mind Vessel : 100
+
+EFFECT 110:
+-  R 630 Dreams of R'lyeh : 2052
+
+EFFECT 148:
+
+-  C 650 Sulphur Haze : 4096
+-  C 654 Rust Mist : 32768
+EFFECT 147:
+
+-  C 673 Cloud of Dreamless Slumber : 2097152
+-  C 674 Fire Cloud : 8
+-  C 703 Poison Cloud : 64
+EFFECT 27:
+
+-  C 666 Magic Duel : 999
+EFFECT 22:
+-  R 675 Fate of Oedipus : 0
+
+EFFECT 74:
+
+-  C 682 Bolt of Unlife : 1013
+-  C 714 Blast of Unlife : 1017
+-  C 746 Vortex of Unlife : 1011
+EFFECT 91:
+-  R 748 Flames from the Sky : 1015
+-  R 757 Stellar Strike : 150
+-  R 1446 Infernal Fumes : 1006
+
+EFFECT 134:
+
+-  C 695 Orb Lightning : 5
+-  C 743 Chain Lightning : 1003
+-  C 752 Lightning Field : 1
+EFFECT 601:
+
+-  C 700 Astral Geyser : 261
+EFFECT 168:
+-  R 705 Project Self : 10
+
+EFFECT 57:
+-  R 711 Mind Hunt : 999
+
+EFFECT 72:
+
+-  C 716 Stream of Life : 5025
+EFFECT 153:
+-  R 722 Elemental Opposition of Earth : 1
+-  R 725 Elemental Opposition of Fire : 1
+-  R 727 Elemental Opposition of Air : 1
+
+EFFECT 41:
+-  R 724 Murdering Winter : 8
+
+EFFECT 146:
+
+-  C 730 Cloud of Death : 262144
+-  C 734 Poison Mist : 64
+-  C 1322 Leeching Darkness : 134217728
+EFFECT 164:
+-  R 778 Alchemical Transmutation : 200
+-  R 825 Transmute Fire : 350
+-  R 856 Earth Gem Alchemy : 300
+
+EFFECT 138:
+
+-  C 780 Armor of Achilles : 10
+-  C 814 Destruction : 5
+EFFECT 67:
+
+-  C 782 Weakness : 3
+-  C 841 Enfeeble : 2
+EFFECT 162:
+
+-  C 784 Mirror Image : 2000
+EFFECT 166:
+
+-  C 799 Animate Tree : 361
+-  C 918 Awaken Forest : 361
+EFFECT 609:
+
+-  C 809 Encase in Ice : 299
+-  C 876 Prison of Sedna : 299
+EFFECT 96:
+
+-  C 839 Shatter : 5020
+EFFECT 103:
+
+-  C 1395 Leeching Touch : 1014
+-  C 1411 Bloodletting : 1
+-  C 1427 Leech : 1024
+EFFECT 44:
+-  R 866 Transformation : 1
+
+EFFECT 84:
+-  R 1221 Lion Sentinels : 105
+-  R 1255 Dome of Seven Seals : 132
+-  R 1345 Forgotten Palace : 111
+
+EFFECT 54: (NOTE: polymorph to arg!)
+
+-  C 887 Curse of the Frog Prince : 2222
+-  C 906 Polymorph : 549
+EFFECT 70:
+-  R 902 Crumble : -25175
+
+EFFECT 36:
+
+-  C 905 Disintegrate : 999
+EFFECT 133:
+
+-  C 914 Time Stop : 104
+EFFECT 34:
+-  R 915 Wish : 0
+
+EFFECT 68: (NOTE: animal summon!)
+-  R 921 Summon Animals : 403
+-  R 1055 Animal Horde : 403
+
+EFFECT 43: (NOTE: edge battlefield summon)
+
+-  C 970 School of Sharks : 815
+-  C 991 Will o' the Wisp : 527
+-  C 1010 Corpse Candle : 528
+EFFECT 126: (NOTE non-controlled battlefield summon)
+
+-  C 977 Summon Lammashtas : 393
+-  C 1407 Call Lesser Horror : -6
+-  C 1426 Call Horror : -7
+EFFECT 49:
+-  R 996 Wind Ride : 100
+
+EFFECT 135:
+-  R 997 Raven Feast : 100
+
+EFFECT 115:
+-  R 1012 Acashic Record : 999
+
+EFFECT 98:
+-  R 1017 Winged Monkeys : 1
+
+EFFECT 62:
+-  R 1069 Manifestation : 392
+
+EFFECT 76:
+-  R 1080 Tartarian Gate : 10
+
+EFFECT 40:
+-  R 1136 Seeking Arrow : 8
+
+EFFECT 95:
+-  R 1152 Cloud Trapeze : 1
+-  R 1404 Hell Ride : 1
+
+EFFECT 30:
+-  R 1180 Dispel : 1
+
+EFFECT 79:
+-  R 1186 Faery Trod : 1
+
+EFFECT 100: (TERRAIN SUMMON!)
+-  R 1197 Hidden in Snow : 1
+-  R 1201 Hidden in Sand : 2
+-  R 1202 Hidden Underneath : 3
+
+EFFECT 152:
+-  R 1226 Disenchantment : 1
+
+EFFECT 26:
+-  R 1229 Ritual of Rebirth : 398
+
+EFFECT 114:
+-  R 1233 Awaken Treelord : 11
+
+EFFECT 167:
+-  R 1245 Lichcraft : 178
+
+EFFECT 500:
+
+-  C 1260 Desiccation : 250
+-  C 1298 Curse of the Desert : 250
+-  C 1435 Damage Reversal : 1064
+EFFECT 20:
+
+-  C 1262 Blink : 30
+EFFECT 97:
+
+-  C 1268 Frighten : 5
+-  C 1290 Panic : 1
+-  C 1293 Despair : 4
+EFFECT 160:
+-  R 1284 Carrier Birds : 15
+-  R 1288 Teleport Gems : 10
+
+EFFECT 161:
+-  R 1285 Carrier Eagle : 1
+-  R 1320 Teleport Item : 1
+
+EFFECT 53:
+-  R 1304 Vengeance of the Dead : 999
+
+EFFECT 131:
+-  R 1310 Cure Disease : 1
+
+EFFECT 132:
+-  R 1315 Pyre of Catharsis : 1
+
+EFFECT 39:
+-  R 1327 Gift of Reason : 1
+-  R 1349 Divine Name : 1
+
+EFFECT 83:
+-  R 1332 Phlegmatia : 136
+-  R 1333 Melancholia : 137
+
+EFFECT 92:
+-  R 1335 Imprint Souls : 2052
+
+EFFECT 77:
+-  R 1336 Gateway : 1
+-  R 1361 Astral Travel : 1
+
+EFFECT 64:
+-  R 1338 Leprosy : 1
+
+EFFECT 94:
+-  R 1343 Beckoning : 999
+
+EFFECT 90:
+-  R 1363 Stygian Paths : 1
+
+EFFECT 156:
+-  R 1370 Arcane Analysis : 1
+
+EFFECT 157:
+-  R 1371 Astral Disruption : 1
+
+EFFECT 163:
+-  R 1373 Nexus Gate : 1
+
+EFFECT 35:
+-  R 1400 Cross Breeding : 1
+-  R 1445 Improved Cross Breeding : 1
+
+EFFECT 118:
+-  R 1401 Blood Feast : 50
+
+EFFECT 108:
+
+-  C 1441 Infernal Prison : -12
+-  C 1442 Claws of Kokytos : -13
+EFFECT 102:
+-  R 1443 Horror Seed : 9
+
+///// Spell Cascades:
+
+1033 Troll King's Court ->
+  25 10 Trolls ->
+  60 5 War Trolls ->
+  61 2 Troll Moose Knights
+
+31 Meteor Shower -> 107 Area Fire
+1030 Sea King's Court -> 36 15 Sea Trolls -> 72 5 Troll Guards
+1075 Faerie Court ->
+  38 Court of Sprites ->
+  124 Fay Folk Court ->
+  125 Fay Folk Court Soldiers ->
+  126 Fay Folk Court Knights
+
+839 Shatter -> 43 extra limp -> 44 extra cripple
+
+1035 Ether Gate -> 64 1 Ether Lord -> 45 15 Ether Warriors
+
+482 Heavenly Choir -> 68 Angels of the Choir -> 69 Harbingers of the Choir
+
+1423 Ritual of Five Gates ->
+  73 Gate Summon Fire ->
+  74 Gate Summon Ice ->
+  75 Gate Summon Storm ->
+  76 Gate Summon Iron
+
+594 Contact Dai Tengu -> 77 10 Tengu Warriors -> 78 15 Karasu Tengus
+
+348 Banquet for the Dead -> 90 4 Ditanu -> 91 Kill Caster
+
+886 Bone Grinding -> 108 Battlefield Limp -> 109 Battlefield Cripple
+
+715 Bane Fire -> 117 Bane Flame Area -> 20 Large Area Decay
+
+271 Orgy -> 87 6 Maenads
+279 xxx -> 87 6 Maenads
+
+286 Celestial Chastisement -> 84 Chastisement
+
+311 Summon Gozu Mezu -> 92 1 Horse-face
+357 Release Lord of Civilization -> 85 age ten years
+
+461 Parting of the Soul -> 111 Summon Predatory Birds
+
+515 Contact Onaqui -> 67 Beast Bats
+
+519 Break the First Soul -> 101 Disease
+
+538 Deceive the Decree of the Lost -> 121 15 Giants of the Lost Tribe
+
+603 Olm Conclave -> 110 15 Great Olms
+
+1450 Bind Demon Lord -> 85 age ten years
+1451 Infernal Forces -> 26 40 imps
+
+1257 Army of the Dead -> 46 Extra Soulless
+
+// non summons tho
+636 Shocking Grasp -> 1 Minor Area Shock
+637 Gust of Winds -> 120 Minor Blunt Damage
+646 Vine Arrow -> 47 Entangle
+650 Sulphur Haze -> 39 Heat Stun
+652 Lightning Bolt -> 1 Minor Area Shock
+
+659 Fireball -> 115 Area Flames
+660 Storm Wind -> 120 Minor Blunt Damage
+663 Acid Bolt -> 116 Acid Splash
+664 Magma Bolts -> 112 Burning
+668 Shadow Bolt -> 42 Minor Paralysis
+670 False Fire -> 122 Area False Flames
+677 Thunder Strike -> 5 Thunder Shock
+679 Acid Rain -> 13 Area Rust
+681 Nether Bolt -> 24 Area Feeble Mind
+683 Bane Fire Dart -> 11 Area Decay
+689 farkill: Fires from Afar -> 3 Large Area Heat Shock
+696 Earthquake -> 104 Earthquake Knockdown Stun
+698 Gifts from Heaven -> 107 Area Fire
+700 Astral Geyser -> 83 Astral Geyser Blast
+701 Shadow Blast -> 42 Minor Paralysis
+712 Astral Fires -> 118 Astral Fires Area
+721 farkill: Thunderstorm -> 5 Thunder Shock
+729 Nether Darts -> 24 Area Feeble Mind
+732 Stygian Rains -> 79 Natural Rain
+733 Storm of Thorns -> 47 Entangle
+737 Illusory Attack -> 30 Archer Illusions
+749 farkill: Flames from the Sky -> 113 Large Fireball
+758 farkill: Stellar Strike -> 107 Area Fire
+837 Maws of the Earth -> 100 earth grip
+862 Skeletal Legion -> 102 Disease All Friendly
+868 Venomous Death -> 114 Decay
+897 Liquify -> 103 Cripple
+938 Phoenix Power -> 19 Fire Resistance
+984 Strength of Gaia -> 27 Strength, Barkskin and Regeneration
+998 Contact Draconians -> 37 30 Draconians
+1038 Forest Troll Tribe -> 99 15 Forest Trolls
+1203 Opposition -> 123 Stun Magic Being
+1248 Unraveling -> 40 Extra feeble mind battle field
+1389 Agony -> 21 Major Fear
+1394 Hell Power -> 4 Mark
+1419 Harm -> 35 Area Chest Wound
+
+
+// spells that are "next" multiple times:
+// (only 1 is a summon)
+
+Minor Area Shock 1 2
+Thunder Shock 5 2
+Area Feeble Mind 24 2
+Minor Paralysis 42 2
+Entangle 47 2
+age ten years 85 2
+6 Maenads 87 2
+Area Fire 107 3
+Minor Blunt Damage 120 2
+*/
 

@@ -46,6 +46,7 @@ export type ParseSchemaOptions = {
   overrides: Record<string, (...args: any[]) => any>;
   knownFields: Record<string, COLUMN>,
   extraFields: Record<string, CreateExtraField>,
+  preTransform?: (...args: any) => any,
 }
 
 const DEFAULT_OPTIONS: ParseSchemaOptions = {
@@ -81,6 +82,10 @@ export function csvToTable(
     .split('\n')
     .filter(line => line !== '')
     .map(line => line.split(_opts.separator));
+
+  if (options?.preTransform) {
+    options.preTransform(rawFields, rawData);
+  }
 
   const hCount = new Map<string, number>;
   for (const [i, f] of rawFields.entries()) {
