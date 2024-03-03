@@ -32,27 +32,31 @@ export class Table {
     if (!joins) throw new Error('shit ass iditot whomst');
     for (const j of joins) {
       validateJoin(j, jt, tables);
-      const [tn, cn] = j;
+      const [tn, cn, pn] = j;
       const t = tables[tn];
       const jb = t.schema.joinedBy;
-      if (jb.some(([jbtn, ]) => jbtn === tn))
-        throw new Error(`${tn} already joined ${j}`)
-      jb.push([jt.schema.name, cn]);
+      if (jb.some(([jbtn, _, jbpn]) => (jbtn === tn) && (jbpn === pn)))
+        console.warn(`${tn} already joined ${j}`)
+      else
+        jb.push([jt.schema.name, cn, pn]);
     }
 
     if (addData) {
       //console.log('APPLYING')
-      for (const r of jt.rows) {
         //console.log('- JOIN', r)
-        for (const [tn, cn] of jt.schema.joins) {
+      for (const [tn, cn, pn] of jt.schema.joins) {
+        for (const r of jt.rows) {
           //console.log('  -', tn, 'ON', cn);
-          const jr = tables[tn].map.get(r[cn]);
+          const jid = r[cn];
+          if (jid === 0) continue;
+          const jr = tables[tn].map.get(jid);
           if (!jr) {
-            console.warn(`MISSED A JOIN ${tn}[${cn}]: NOTHING THERE`, r);
-            continue;
+            console.warn(`${jt.name} MISSED A JOIN ${tn}[${cn}]=${pn}: NOTHING THERE`, r);
+            break;
           }
-          if (jr[jt.name]) jr[jt.name].push(r);
-          else jr[jt.name] = [r];
+          const prop = pn ?? jt.name;
+          if (jr[prop]) jr[prop].push(r);
+          else jr[prop] = [r];
           //console.log('  >', jr.id, jr.name, jr[tn]);
         }
       }
@@ -161,7 +165,7 @@ export class Table {
 
     for (const t of tables) {
       if (!t.schema.joins) continue;
-      for (const [aT, aF] of t.schema.joins) {
+      for (const [aT, aF, aP] of t.schema.joins) {
         const tA = tableMap[aT];
         if (!tA) throw new Error(`${t.name} joins undefined table ${aT}`);
         if (!t.rows.length) continue; // empty table i guess?
@@ -173,10 +177,10 @@ export class Table {
           }
           const a = tA.map.get(idA);
           if (a === undefined) {
-            console.error(`row has a missing id?`, a, idA, r);
+            console.error(`row has a missing id?`, a, idA, r, `${aT}[${aF}]=${aP}`);
             continue;
           }
-          (a[t.name] ??= []).push(r);
+          (a[aP ?? t.name] ??= []).push(r);
         }
       }
     }

@@ -16,7 +16,9 @@ export function joinDumped (tableList: Table[]) {
     makeSpellByUnit(tables),
     makeUnitByNation(tables),
     makeUnitByUnitSummon(tables),
+    makeUnitBySpell(tables),
   );
+  makeMiscUnit(tables);
 
   //dumpRealms(tables);
 
@@ -34,6 +36,17 @@ export function joinDumped (tableList: Table[]) {
   ]) {
     Table.removeTable(t, tableList);
   }
+
+  // just seeing where we're at...
+  let us = 0;
+  let ut = 0;
+  for (const unit of tables.Unit.rows) {
+    ut++;
+    if (unit.source) us++;
+    //if (!unit.source) console.log(`${unit.id}:${unit.name} has no sources`);
+  }
+  console.log(`${us} / ${ut} units have sources`)
+  console.log('Unit joined by?', tables.Unit.schema.joinedBy)
 }
 
 function dumpRealms ({ Realm, Unit }: TR) {
@@ -130,7 +143,7 @@ function makeNationSites(tables: TR): Table {
     flagsUsed: 1,
     overrides: {},
     rawFields: {},
-    joins: 'Nation[nationId]+MagicSite[siteId]',
+    joins: 'Nation[nationId]=Sites+MagicSite[siteId]=Nations',
     fields: [
       'nationId',
       'siteId',
@@ -216,65 +229,13 @@ function makeNationSites(tables: TR): Table {
   );
 }
 
-/*
-function makeUnitSourceSchema (): any {
-  return new Schema({
-    name: 'UnitSource',
-    key: '__rowId',
-    flagsUsed: 0,
-    overrides: {},
-    rawFields: {
-      unitId: 0,
-      nationId: 1,
-      sourceId: 2,
-      sourceType: 3,
-      sourceArg: 4,
-    },
-    fields: [
-      'unitId',
-      'nationId',
-      'sourceId',
-      'sourceType',
-      'sourceArg',
-    ],
-    columns: [
-      new NumericColumn({
-        name: 'unitId',
-        index: 0,
-        type: COLUMN.U16,
-      }),
-      new NumericColumn({
-        name: 'nationId',
-        index: 1,
-        type: COLUMN.U16,
-      }),
-      new NumericColumn({
-        name: 'sourceId',
-        index: 2,
-        type: COLUMN.U16,
-      }),
-      new NumericColumn({
-        name: 'sourceType',
-        index: 3,
-        type: COLUMN.U8,
-      }),
-      new NumericColumn({
-        name: 'sourceArg',
-        index: 4,
-        type: COLUMN.U16,
-      }),
-    ]
-  });
-}
-*/
-
 function makeSpellByNation (tables: TR): Table {
   const attrs = tables.AttributeBySpell;
   const delRows: number[] = [];
   const schema = new Schema({
     name: 'SpellByNation',
     key: '__rowId',
-    joins: 'Spell[spellId]+Nation[nationId]',
+    joins: 'Spell[spellId]=Nations+Nation[nationId]=Spells',
     flagsUsed: 0,
     overrides: {},
     rawFields: { spellId: 0, nationId: 1 },
@@ -323,7 +284,7 @@ function makeSpellByUnit (tables: TR): Table {
   const schema = new Schema({
     name: 'SpellByUnit',
     key: '__rowId',
-    joins: 'Spell[spellId]+Unit[unitId]',
+    joins: 'Spell[spellId]=OnlyUnits+Unit[unitId]=Spells',
     flagsUsed: 0,
     overrides: {},
     rawFields: { spellId: 0, unitId: 1 },
@@ -397,7 +358,7 @@ function makeUnitBySite (tables: TR): Table {
   const schema = new Schema({
     name: 'UnitBySite',
     key: '__rowId',
-    joins: 'MagicSite[siteId]+Unit[unitId]',
+    joins: 'MagicSite[siteId]=Units+Unit[unitId]=Source',
     flagsUsed: 0,
     overrides: {},
     rawFields: { siteId: 0, unitId: 1, recType: 2, recArg: 3 },
@@ -434,15 +395,15 @@ function makeUnitBySite (tables: TR): Table {
       // we assume the fields are always used in order
       if (!mnr) break;
       let recArg = 0;
-      const nj = site.SiteByNation?.find(({ siteId }) => siteId === site.id);
+      const nj = site.Nations?.find(({ siteId }) => siteId === site.id);
       if (!nj) {
         console.error(
-          'mixed up cap-only mon site', k, site.id, site.name, site.SiteByNation
+          'mixed up cap-only mon site', k, site.id, site.name, site.Nations
         );
         recArg = 0;
         continue;
       } else {
-        //console.log('niiiice', nj, site.SiteByNation)
+        //console.log('niiiice', nj, site.Nations)
         recArg = nj.nationId;
       }
       rows.push({
@@ -458,10 +419,10 @@ function makeUnitBySite (tables: TR): Table {
       // we assume the fields are always used in order
       if (!mnr) break;
       let recArg = 0;
-      const nj = site.SiteByNation?.find(({ siteId }) => siteId === site.id);
+      const nj = site.Nations?.find(({ siteId }) => siteId === site.id);
       if (!nj) {
         console.error(
-          'mixed up cap-only cmdr site', k, site.id, site.name, site.SiteByNation
+          'mixed up cap-only cmdr site', k, site.id, site.name, site.Nations
         );
         recArg = 0;
         continue;
@@ -555,7 +516,7 @@ function makeUnitBySite (tables: TR): Table {
   return tables[schema.name] = Table.applyLateJoins(
     new Table(rows, schema),
     tables,
-    false
+    true
   );
 
 }
@@ -599,7 +560,7 @@ const SUM_FIELDS = [
 */
 
 
-export const enum SUMMON {
+export const enum MON_SUMMON {
   UNKNOWN = 0,
   ALLIES = 1, // via #makemonsterN (and the single summon5 in the csv data)
   DOM = 2, // via #[rare]domsummonN
@@ -608,12 +569,13 @@ export const enum SUMMON {
   BATTLE_START = 5, // via #batstartsumN or #battlesum
   TEMPLE_TRAINER = 6, // via #templetrainer, value is hard coded to 1859...
   WINTER = 7, // not a command, used once by vampire queen
+  MOUNT = 8, // not really a summon but effectively similar
 }
 
-function D_SUMMON (t: SUMMON, s: number): string {
+function D_SUMMON (t: MON_SUMMON, s: number): string {
   switch (t) {
-    case SUMMON.ALLIES: return `#makemonster${s}`;
-    case SUMMON.DOM: {
+    case MON_SUMMON.ALLIES: return `#makemonster${s}`;
+    case MON_SUMMON.DOM: {
       switch (s) {
         case 0: return `#domsummon`;
         case 1: return `#domsummon2`;
@@ -622,69 +584,37 @@ function D_SUMMON (t: SUMMON, s: number): string {
         default: return `DOM ?? ${t}:${s}`;
       }
     }
-    case SUMMON.AUTO: return `#summon${s}`;
-    case SUMMON.BATTLE_ROUND: return `#battlesum${s}`;
-    case SUMMON.BATTLE_START: {
+    case MON_SUMMON.AUTO: return `#summon${s}`;
+    case MON_SUMMON.BATTLE_ROUND: return `#battlesum${s}`;
+    case MON_SUMMON.BATTLE_START: {
       const n = s & 63;
       return s & 128 ? `#batstartsum${n}d6` :
         s & 64 ? `#batstartsum1d3` :
         `#batstartsum${n}`;
     }
-    case SUMMON.TEMPLE_TRAINER: return `#templetrainer`;
-    case SUMMON.WINTER: return `(1d3 at the start of winter)`;
+    case MON_SUMMON.TEMPLE_TRAINER: return `#templetrainer`;
+    case MON_SUMMON.WINTER: return `(1d3 at the start of winter)`;
     default: return `IDK??? t=${t}; s=${s}`
   }
 }
 
-// I don't think these are defined directly in the data (just a name), but we
-// could maintain a table + join
-const MONTAGS = {
-  // fay folk
-  [-26]: [],
-  // dwarfs
-  [-21]: [3425, 3426, 3427, 3428],
-  //Random Bird (Falcon, Black Hawk, Swan or Strange Bird)
-  [-20]: [3371, 517, 2929, 3327],
-  // Lions
-  [-19]: [3363, 3364, 3365, 3366],
-  // TODO - need to figure out which monsters these really are (crossbreends)
-  [-12]: [530], // 3% good?
-  [-11]: [530], // bad
-  [-10]: [530], // good
-  // Yatas and Pairikas
-  [-17]: [2632, 2633, 2634, 2636],
-  // Celestial Yazad
-  [-16]: [2620, 2621, 2622, 2623, 2624, 2625],
-  // Random Bug
-  [-9]: [],
-  // Doom Horror
-  [-8]: [],
-  // Horror
-  [-7]: [],
-  // Lesser Horror
-  [-6]: [],
-  // Random Animal
-  [-5]: [],
-  // Ghoul
-  [-4]: [],
-  // Soultrap Ghost
-  [-3]: [],
-  // Longdead
-  [-2]: [],
-  // Soulless
-  [-1]: [],
-}
 
 function makeUnitByUnitSummon (tables: TR) {
   const { Unit } = tables;
   const schema = new Schema({
-    name: 'UnitBySite',
+    name: 'UnitBySummoner',
     key: '__rowId',
-    joins: 'Unit[unitId]+Unit[summonerId]',
+    joins: 'Unit[summonerId]=Summons+Unit[unitId]=Source',
     flagsUsed: 1,
     overrides: {},
     fields: ['unitId', 'summonerId', 'summonType', 'summonStrength', 'asTag'],
-    rawFields: { unitId: 0, summonerId: 1, summonType: 2, summonStrength: 3, asTag: 4},
+    rawFields: {
+      unitId: 0,
+      summonerId: 1,
+      summonType: 2,
+      summonStrength: 3,
+      asTag: 4
+    },
     columns: [
       new NumericColumn({
         name: 'unitId',
@@ -707,8 +637,8 @@ function makeUnitByUnitSummon (tables: TR) {
         type: COLUMN.U8,
       }),
       new BoolColumn({
-        name: 'summonStrength',
-        index: 3,
+        name: 'asTag',
+        index: 4,
         type: COLUMN.BOOL,
         bit: 0,
         flag: 1,
@@ -718,7 +648,7 @@ function makeUnitByUnitSummon (tables: TR) {
 
   const rows: any[] = [];
 
-  function printRow (sid: number, uid: number, t: SUMMON, s: number, p?: string) {
+  function printRow (sid: number, uid: number, t: MON_SUMMON, s: number, p?: string) {
     p ??= '  -';
     const sn = Unit.map.get(sid).name
     const un = Unit.map.get(uid).name
@@ -726,7 +656,7 @@ function makeUnitByUnitSummon (tables: TR) {
     console.log(`${p} ${d} ${sn} -> ${un}`);
   }
   function addRow (
-    summonType: SUMMON,
+    summonType: MON_SUMMON,
     summonStrength: number,
     summonerId: number,
     target: number,
@@ -766,51 +696,56 @@ function makeUnitByUnitSummon (tables: TR) {
 
   for (const summoner of Unit.rows) {
     if (summoner.summon)
-      addRow(SUMMON.ALLIES, summoner.n_summon, summoner.id, summoner.summon);
+      addRow(MON_SUMMON.ALLIES, summoner.n_summon, summoner.id, summoner.summon);
 
     if (summoner.summon5)
-      addRow(SUMMON.ALLIES, 5, summoner.id, summoner.summon5);
+      addRow(MON_SUMMON.ALLIES, 5, summoner.id, summoner.summon5);
 
     if (summoner.summon1)
-      addRow(SUMMON.AUTO, 1, summoner.id, summoner.summon1);
+      addRow(MON_SUMMON.AUTO, 1, summoner.id, summoner.summon1);
 
     // value is hard coded to 1859 (thats the only thing summoned in vanilla)
     if (summoner.templetrainer)
-      addRow(SUMMON.TEMPLE_TRAINER, 0, summoner.id, 1859);
+      addRow(MON_SUMMON.TEMPLE_TRAINER, 0, summoner.id, 1859);
     if (summoner.wintersummon1d3)
-      addRow(SUMMON.WINTER, 0, summoner.id, summoner.wintersummon1d3);
+      addRow(MON_SUMMON.WINTER, 0, summoner.id, summoner.wintersummon1d3);
 
     if (summoner.domsummon)
-      addRow(SUMMON.DOM, 0, summoner.id, summoner.domsummon);
+      addRow(MON_SUMMON.DOM, 0, summoner.id, summoner.domsummon);
     if (summoner.domsummon2)
-      addRow(SUMMON.DOM, 1, summoner.id, summoner.domsummon2);
+      addRow(MON_SUMMON.DOM, 1, summoner.id, summoner.domsummon2);
     if (summoner.domsummon20)
-      addRow(SUMMON.DOM, 2, summoner.id, summoner.domsummon20);
+      addRow(MON_SUMMON.DOM, 2, summoner.id, summoner.domsummon20);
     if (summoner.raredomsummon)
-      addRow(SUMMON.DOM, 3, summoner.id, summoner.raredomsummon);
+      addRow(MON_SUMMON.DOM, 3, summoner.id, summoner.raredomsummon);
 
     for (const s of [/*1,2,3,4,*/5]) { // only 5 in the csv
       const k = `battlesum${s}`;
-      if (summoner[k]) addRow(SUMMON.BATTLE_ROUND, s, summoner.id, summoner[k]);
+      if (summoner[k]) addRow(MON_SUMMON.BATTLE_ROUND, s, summoner.id, summoner[k]);
     }
 
     for (const s of [1,2,3,4,5]) {
       const k = `batstartsum${s}`;
-      if (summoner[k]) addRow(SUMMON.BATTLE_START, s, summoner.id, summoner[k]);
+      if (summoner[k]) addRow(MON_SUMMON.BATTLE_START, s, summoner.id, summoner[k]);
     }
     for (const s of [1,2,3,4,5,6/*,7,8,9*/]) { // vanilla only uses up to 6
       const k = `batstartsum${s}d6`;
-      if (summoner[k]) addRow(SUMMON.BATTLE_START, s|128, summoner.id, summoner[k]);
+      if (summoner[k]) addRow(MON_SUMMON.BATTLE_START, s|128, summoner.id, summoner[k]);
     }
     if (summoner.batstartsum1d3)
-      addRow(SUMMON.BATTLE_START, 64, summoner.id, summoner.batstartsum1d3)
+      addRow(MON_SUMMON.BATTLE_START, 64, summoner.id, summoner.batstartsum1d3)
+
+    if (summoner.mountmnr) {
+      // TODO - smart mounts might be commanders? idr
+      addRow(MON_SUMMON.MOUNT, 1, summoner.id, summoner.mountmnr);
+    }
   }
 
 
   return tables[schema.name] = Table.applyLateJoins(
     new Table(rows, schema),
     tables,
-    false,
+    true,
   );
 }
 
@@ -822,7 +757,7 @@ function makeUnitByNation (tables: TR): Table {
     flagsUsed: 0,
     overrides: {},
     rawFields: { nationId: 0, unitId: 1, recType: 2 },
-    joins: 'Nation[nationId]+Unit[unitId]',
+    joins: 'Nation[nationId]=Units+Unit[unitId]=Source',
     fields: ['nationId', 'unitId', 'recType'],
     columns: [
       new NumericColumn({
@@ -860,7 +795,7 @@ function makeUnitByNation (tables: TR): Table {
   return tables[schema.name] = Table.applyLateJoins(
     new Table(rows, schema),
     tables,
-    false,
+    true,
   );
 }
 
@@ -1149,8 +1084,8 @@ function makePretenderByNation (tables: TR, rows: any[]) {
         REC_TYPE.PRETENDER;
       rows.push({
         unitId,
+        nationId,
         recType,
-        recArg: nationId,
         __rowId: rows.length,
       });
     }
@@ -1165,39 +1100,393 @@ function makePretenderByNation (tables: TR, rows: any[]) {
   }
 }
 
-// useful data from the original formatter:
-//  // Marverni gets Iron Boars 924 -> 1808
-//
-//function list_summons(spell, effect) {
-//
-//  if (!arr) {
-//    arr = [spell.damage];
-//  }
-//  //create array of refs
-//  var tokens = [];
-//  for (var i=0, uid; uid= arr[i];  i++)
-//    tokens.push( show_summon(uid, 1) );
-//
-//  //comma separated & one per line
-//  return tokens.join(', <br />');
-//}
-//
+const enum MISC_UNIT_SRC {
+  MISC_MISC = 0, // VERY misc. like trees and shit
+  REANIM = 1,
+  INDIE = 2,
+  DEBUG = 3, // debug sensei/kohai
+}
+// TODO:
+// longdead/soulless/reanimated/etc (incl. montags?)
+// TREES (unanimated...)
+// look for water/land/forest/plain shapes, add to the relevant area
+// INDIES
+// events?
+function makeMiscUnit(tables: TR) {
+  const {
+    Unit,
+    UnitByNation,
+    UnitBySpell,
+    UnitBySummoner,
+    UnitBySite,
+  } = tables;
+  const sources = new Map<number, { unit: any, src: any[] }>(
+    Unit.rows.map(unit => [unit.id, { unit, src: [] }])
+  );
 
-// idk tbh
+  for (const r of UnitByNation.rows) sources.get(r.unitId)!.src.push(r);
+  for (const r of UnitBySpell.rows) sources.get(r.unitId)!.src.push(r);
+  for (const r of UnitBySummoner.rows) sources.get(r.unitId)!.src.push(r);
+  for (const r of UnitBySite.rows) sources.get(r.unitId)!.src.push(r);
+
+  for (const { unit, src } of sources.values()) {
+    if (src.length) continue;
+    console.log(`Unit#${unit.id} : ${unit.name} has no sources`);
+  }
+}
+
+export enum SPELL_SUMMON {
+  BASIC = 0, // not set, perhaps
+  TEMPORARY = 1,
+  UNIQUE = 2,
+  COMMANDER = 4,
+  NEUTRAL = 8, // i.e. not on your side
+  EDGE = 16,
+  REMOTE = 16,
+  COMBAT = 32,
+  SPECIAL_HOG = 64, // maerverni iron boars :I
+  PICK_ONE = 128,
+  ASSASSIN = 256,
+  STEALTHY = 512,
+  ALIVE_ONLY = 1024,
+}
+
+function makeUnitBySpell (tables: TR) {
+  const { Unit, Spell } = tables;
+
+  const schema = new Schema({
+    name: 'UnitBySpell',
+    key: '__rowId',
+    joins: 'Spell[spellId]=Summons+Unit[unitId]=Source',
+    flagsUsed: 0,
+    overrides: {},
+    fields: [
+      'unitId', 'spellId', 'summonType', 'summonStrength',
+    ],
+    rawFields: {
+      unitId: 0,
+      spellId: 1,
+      summonType: 2,
+      summonStrength: 3,
+    },
+    columns: [
+      new NumericColumn({
+        name: 'unitId',
+        index: 0,
+        type: COLUMN.I32,
+      }),
+      new NumericColumn({
+        name: 'spellId',
+        index: 1,
+        type: COLUMN.I32,
+      }),
+      new NumericColumn({
+        name: 'summonType',
+        index: 2,
+        type: COLUMN.I32,
+      }),
+      new NumericColumn({
+        name: 'summonStrength',
+        index: 3,
+        type: COLUMN.I32,
+      }),
+      /*
+      new NumericColumn({
+        name: 'specialCondition',
+        index: 4,
+        type: COLUMN.U8,
+      }),
+      */
+    ]
+  });
+
+  const rows: any[] = [];
+
+  function addRow (
+    unitId: number,
+    spellId: number,
+    summonType: number,
+    summonStrength: number,
+  ) {
+    rows.push({
+      unitId,
+      spellId,
+      summonType,
+      summonStrength,
+      __rowId: rows.length,
+    });
+  }
+
+  for (const spell of Spell.rows) {
+    let summons: number | number[] | null = null;
+    let summonType = SPELL_SUMMON.BASIC;
+    let summonStrength = spell.effects_count;
+    if (SPECIAL_SUMMON[spell.id]) {
+      summons = SPECIAL_SUMMON[spell.id];
+      if (!Array.isArray(summons)) throw new Error('u go to hell now');
+      switch (spell.id) {
+        // iron hoggs
+        case 859:
+          addRow(summons[0], 859, SPELL_SUMMON.BASIC, summonStrength);
+          addRow(summons[1], 859, SPELL_SUMMON.SPECIAL_HOG,  summonStrength);
+          break;
+        // unleash imprisoned ones
+        case 607:
+          for (const uid of summons)
+            addRow(
+              uid,
+              607,
+              SPELL_SUMMON.COMMANDER,
+              summonStrength
+            );
+          break;
+        // tarts
+        case 1080:
+          for (const uid of summons)
+            addRow(
+              uid,
+              1080,
+              SPELL_SUMMON.PICK_ONE|SPELL_SUMMON.COMMANDER,
+              summonStrength
+            );
+          break;
+        // angelic host/horde from hell
+        case 480:
+        case 1410:
+          addRow(summons[0], spell.id, SPELL_SUMMON.REMOTE|SPELL_SUMMON.COMMANDER, 1);
+          addRow(summons[1], spell.id, SPELL_SUMMON.REMOTE,  summonStrength);
+          break;
+        // ghost armada
+        case 1219:
+          for (const uid of summons)
+            addRow(
+              uid,
+              1219,
+              SPELL_SUMMON.BASIC,
+              1, // TODO - probably need to look these up?
+            );
+          break;
+        default:
+          throw new Error(`unhandled special summon for spell id ${spell.id}?`);
+      }
+      continue;
+    }
+
+    switch (spell.effect_number) {
+      case 1: // basic summon monster
+        summons = spell.raw_value;
+        break;
+      case 21: // basic summon commander
+        summonType |= SPELL_SUMMON.COMMANDER;
+        summons = spell.raw_value;
+        break;
+      case 37: // remote summon
+        summons = spell.raw_value;
+        summonType |= SPELL_SUMMON.REMOTE
+      case 38: // remote summon temporary
+        summonType |=SPELL_SUMMON.TEMPORARY;
+        break;
+
+      case 43: // battle edge
+        summons = spell.raw_value;
+        summonType |= SPELL_SUMMON.COMBAT|SPELL_SUMMON.EDGE
+        break;
+
+      case 50: // remote summon assassin
+        summons = spell.raw_value;
+        summonType |= SPELL_SUMMON.ASSASSIN|SPELL_SUMMON.COMMANDER;
+        break;
+
+      case 68: // animals TODO - should probably be under special, idk what animals
+        summons = spell.raw_value;
+        break;
+
+      // not sure how these two differ!
+      case 89: // (re)summon unique
+        let idx = Number(spell.raw_value) || Number(spell.damage);
+        if (idx < 0) idx *= -1
+        summons = UNIQUE_SUMMON[idx];
+        if (!summons) {
+          console.error(`still fucked up unique summon shit @ ${idx}`, spell);
+          throw new Error('piss city');
+        }
+        summonType |= SPELL_SUMMON.COMMANDER|SPELL_SUMMON.UNIQUE;
+        break;
+      case 93: // (re)summon unique
+        summons = spell.raw_value;
+        summonType |= SPELL_SUMMON.COMMANDER|SPELL_SUMMON.UNIQUE;
+        break;
+
+      case 119: // remote stealthy
+        summons = spell.raw_value;
+        summonType |= SPELL_SUMMON.COMMANDER|SPELL_SUMMON.STEALTHY;
+        break;
+
+      case 126: // netrual battlefield
+        summonType |= SPELL_SUMMON.COMBAT|SPELL_SUMMON.NEUTRAL;
+        summons = spell.raw_value;
+        break;
+
+      case 137: // summon (Ladon) if alive
+        summonType |= SPELL_SUMMON.UNIQUE|SPELL_SUMMON.COMMANDER|SPELL_SUMMON.ALIVE_ONLY;
+        summons = spell.raw_value;
+        break;
+
+      case 141: // FANCY BIRD
+        summonStrength = 2; // not really but... its for display
+        summons = spell.raw_value;
+        break;
+
+      case 166: // TREES
+        summons = spell.raw_value;
+        break;
+
+      // TODO revisit these
+      case 130: // (A KIND OF Polymorph)
+      case 54:  // (NOTE: polymorph to arg!)
+      case 127: // infernal breeding (CREATES DEOMON GUYS???)
+      case 35:  // cross-breeding (CREATES FOUL GUYS)
+        continue;
+
+      default:
+        continue;
+    }
+
+    // this apparently aint a summoning spell??
+    if (!summons) {
+      summons = spell.damage;
+      if (!summons) {
+        console.error(
+          '???? ' + spell.id + ', ' + spell.effect_number + '->' + summons
+        );
+        continue;
+      }
+    }
+
+    if (!spell.ritual) summonType |= SPELL_SUMMON.COMBAT;
+    // smh
+    if (typeof summons === 'bigint') summons = Number(summons);
+    if (typeof summons === 'number') {
+      if (summons < 0) {
+        if (!MONTAGS[summons as number]) {
+          throw new Error(`missed montag ${summons}`)
+        }
+        summons = MONTAGS[summons as number]
+        summonType |= SPELL_SUMMON.PICK_ONE; // maybe not quite accurate?
+      } else {
+        summons = [summons];
+      }
+    }
+
+    if (!Array.isArray(summons)) {
+      console.log('WTF IS THIS', summons)
+      throw new Error('YOU FUCKED UP');
+    }
+    if (!summons.length) {
+      /*
+      console.error(
+        `missing summons for ${spell.id}:${spell.name}`,
+        {
+          effect: spell.effect_number,
+          damage: spell.damage,
+          summons,
+        }
+      );
+      */
+      continue;
+    }
+
+    for (const uid of summons) {
+      const unit = Unit.map.get(uid)
+      if (!unit) {
+        console.error(`${spell.id}:${spell.name} summons unknown creature ${uid}`);
+        continue;
+      }
+      addRow(uid, spell.id, summonType, summonStrength);
+      // we may discover commander status here:
+      if ((SPELL_SUMMON.COMMANDER & summonType) && !(unit.type & UNIT_TYPE.COMMANDER)) {
+        /*
+        console.error(` ***** ${
+          spell.id}:${spell.name
+        } indicates that ${
+          uid}:${unit.id
+        } is a commander (prev=${
+          unit.type
+        })`);
+        */
+        unit.type |= UNIT_TYPE.COMMANDER;
+      }
+    }
+  }
+
+  return tables[schema.name] = Table.applyLateJoins(
+    new Table(rows, schema),
+    tables,
+    true,
+  );
+}
+
+
+
+// I don't think these are defined directly in the data (just a name), but we
+// could maintain a table + join
+const MONTAGS = {
+  // fay folk
+  [-26]: [],
+  // dwarfs
+  [-21]: [3425, 3426, 3427, 3428],
+  //Random Bird (Falcon, Black Hawk, Swan or Strange Bird)
+  [-20]: [3371, 517, 2929, 3327],
+  // Lions
+  [-19]: [3363, 3364, 3365, 3366],
+  // Soul trap something or other?
+  [-18]: [],
+  // Yatas and Pairikas
+  [-17]: [2632, 2633, 2634, 2636],
+  // Celestial Yazad
+  [-16]: [2620, 2621, 2622, 2623, 2624, 2625],
+
+  // TODO - need to figure out which monsters these really are (crossbreends)
+  [-12]: [530], // 3% good?
+  [-11]: [530], // bad
+  [-10]: [530], // good
+
+  // Random Bug
+  [-9]: [],
+  // Doom Horror
+  [-8]: [],
+  // Horror
+  [-7]: [],
+  // Lesser Horror
+  [-6]: [],
+  // Random Animal
+  [-5]: [],
+  // Ghoul
+  [-4]: [],
+  // Soultrap Ghost
+  [-3]: [],
+  // Longdead
+  [-2]: [],
+  // Soulless
+  [-1]: [],
+}
+// idk tbh, just stuff with weird conditions or whatever
 const SPECIAL_SUMMON = {
-  // effect 76
-  tartarianGate:         [771, 772, 773, 774, 775, 776, 777],
-  // effect 116
-  unleashImprisonedOnes: [2498, 2499, 2500],
-  // spell 480  weird double summon (eff 37)
-  angelichost:           [465, 543],
-  // spell 1410 weird double summon (eff 37)
-  hordefromhell:         [304, 303],
-  // 859: iron pig + iron boar for ea marverni...
-  ironswine:             [924, 1808],
-  // effect 81 (global) and damage === 43
-  ghostShipArmada:       [3348, 3349, 3350, 3351, 3352],
+  // these are not montags per se, im sure there are reasons for this.
+  // tartarian Gate / effect 76
+  [1080]: [771, 772, 773, 774, 775, 776, 777],
+  // ea argartha "unleashed imprisoned ones" effect 116
+  [607 ]: [2498, 2499, 2500],
+  // angelic host spell 480  weird double summon (eff 37)
+  [480 ]: [465, 3870],
+  // hordes from hell weird double summon (eff 37)
+  [1410]: [304, 303],
+  // iron pig + iron boar for ea marverni...
+  [859 ]: [924, 1808],
+  // ghost ship armada global spell 1219 effect 81 (global) and damage === 43
+  [1219]: [3348, 3349, 3350, 3351, 3352],
 };
+
 // from effect 89, key is damage/raw_argument
 const UNIQUE_SUMMON = {
   // Bind Ice Devil
@@ -1239,7 +1528,9 @@ const UNIQUE_SUMMON = {
   //Sanguine Heritage
   19: [1019, 1035, 3244, 3245, 3251, 3252, 3253, 3255],
   // Mandeha
-  20: [1748, 3635, 3636]
+  20: [1748, 3635, 3636],
+  // 4d dwarf
+  21: [3425, 3426, 3427, 3428],
 };
 
 // effect 100
@@ -1265,6 +1556,104 @@ function findSp(e, rit, sel = -3) {
         ).slice(sel).join('\n')
     )
 }
+
+///// SUMMON EFFECTS //////
+DONE 1: (SUMMON MONSTER)
+-  R 1452 Infernal Tempest : 632
+-  R 1453 Forces of Ice : 449
+-  R 1454 Infernal Crusade : 489
+-  C 1184 Horde of Skeletons : -2
+-  C 1385 Summon Imps : 303
+-  C 1417 Summon Illearth : 3756
+
+DONE 38: (REMOTE SUMMON UNIT TEMP)
+-  R 1078 Ghost Riders : 189
+-  R 1416 Send Lesser Horror : -6
+-  R 1455 Send Horror : -7
+
+DONE 21: (SUMMON COMMANDER)
+-  R 1384 Bind Shadow Imp : 2287
+-  R 1412 Bind Succubus : 811
+-  R 1444 Curse of Blood : 404
+-  C 56 Grow Lich : 960
+-  C 58 Summon Qarin : 3471
+-  C 80 Open Soul Trap : -18
+
+DONE 37: (PERMANENT REMOTE SUMMON)
+-  R 1257 Army of the Dead : -2
+-  R 1410 Horde from Hell : 303
+-  R 1428 Plague of Locusts : 2794
+
+DONE 137: (SUMMON, ALIVE ONLY)
+-  R 266 Call Ladon : 3167
+
+DONE 93: (SUMMON UNIQUE?)
+-  R 272 Daughter of Typhon : 1822
+-  R 1072 Call the Eater of the Dead : 994
+
+DONE 50: (SUMMON ASSASSIN)
+-  R 449 Send Aatxe : 3629
+-  R 1067 Earth Attack : 3741
+-  R 1422 Infernal Disease : 1662
+
+DONE 119: (REMOTE SUMMON STEALTHY)
+-  R 326 Send Vodyanoy : 1953
+
+
+DONE 89: (UNIQUE SUMMON!)
+-  R 1430 Father Illearth : 5
+-  R 1438 Bind Heliophagus : 3
+-  R 1450 Bind Demon Lord : 10
+
+DONE 141: SUMMON FANCY BIRD ONLY
+-  R 537 Call the Birds of Splendor : 3382
+DONE 116:
+-  R 607 Unleash Imprisoned Ones : 1
+
+EFFECT 166:
+
+-  C 799 Animate Tree : 361
+-  C 918 Awaken Forest : 361
+
+EFFECT 68: (NOTE: animal summon!)
+-  R 921 Summon Animals : 403
+-  R 1055 Animal Horde : 403
+
+EFFECT 43: (NOTE: edge battlefield summon)
+
+-  C 970 School of Sharks : 815
+-  C 991 Will o' the Wisp : 527
+-  C 1010 Corpse Candle : 528
+EFFECT 126: (NOTE non-controlled battlefield summon)
+
+-  C 977 Summon Lammashtas : 393
+-  C 1407 Call Lesser Horror : -6
+-  C 1426 Call Horror : -7
+
+
+
+// not really a summon but we will want to track these:
+EFFECT 130: (A KIND OF Polymorph)
+-  R 290 Hannya Pact : 3070
+-  R 291 Greater Hannya Pact : 1432
+
+EFFECT 54: (NOTE: polymorph to arg!)
+
+-  C 887 Curse of the Frog Prince : 2222
+-  C 906 Polymorph : 549
+
+EFFECT 127: (CREATES DEOMON GUYS???)
+-  R 320 Infernal Breeding : 1
+EFFECT 35: (CREATES FOUL GUYS)
+-  R 1400 Cross Breeding : 1
+-  R 1445 Improved Cross Breeding : 1
+
+
+
+
+///// OTHER EFFECTS
+
+
 EFFECT 0:
 
 -  C 484 ... : 0
@@ -1299,13 +1688,6 @@ EFFECT 7:
 -  C 844 Blood Poisoning : 2011
 -  C 868 Venomous Death : 3019
 -  C 978 Maggots : 50
-EFFECT 1: (SUMMON MONSTER)
--  R 1452 Infernal Tempest : 632
--  R 1453 Forces of Ice : 449
--  R 1454 Infernal Crusade : 489
--  C 1184 Horde of Skeletons : -2
--  C 1385 Summon Imps : 303
--  C 1417 Summon Illearth : 3756
 EFFECT 11:
 
 -  C 1351 Plague : 8
@@ -1326,19 +1708,6 @@ EFFECT 10:
 -  C 1403 Blood Lust : 128
 -  C 1434 Purify Blood : 288230376151711744
 -  C 1436 Rush of Strength : 128
-
-EFFECT 38: (REMOTE SUMMON UNIT TEMP)
--  R 1078 Ghost Riders : 189
--  R 1416 Send Lesser Horror : -6
--  R 1455 Send Horror : -7
-
-EFFECT 21: (SUMMON COMMANDER)
--  R 1384 Bind Shadow Imp : 2287
--  R 1412 Bind Succubus : 811
--  R 1444 Curse of Blood : 404
--  C 56 Grow Lich : 960
--  C 58 Summon Qarin : 3471
--  C 80 Open Soul Trap : -18
 EFFECT 81:
 -  R 1440 Blood Vortex : 87
 -  R 1449 The Looming Hell : 42
@@ -1346,11 +1715,6 @@ EFFECT 81:
 -  C 1362 Soul Drain : 5
 -  C 1377 Legion's Demise : 143
 -  C 1421 Blood Rain : 112
-
-EFFECT 37: (PERMANENT REMOTE SUMMON)
--  R 1257 Army of the Dead : -2
--  R 1410 Horde from Hell : 303
--  R 1428 Plague of Locusts : 2794
 
 EFFECT 23:
 -  R 1073 Dragon Master : 1073741824
@@ -1424,40 +1788,17 @@ EFFECT 136:
 EFFECT 511:
 -  R 263 Blessing of the God-slayer : 654
 -  R 278 Taurobolium : 651
-
-EFFECT 137: (SUMMON, ALIVE ONLY)
--  R 266 Call Ladon : 3167
-
-EFFECT 93:
--  R 272 Daughter of Typhon : 1822
--  R 1072 Call the Eater of the Dead : 994
-
 EFFECT 85:
 -  R 277 Epopteia : 94
 
 EFFECT 111:
 -  R 289 Internal Alchemy : 15
 
-EFFECT 130: (A KIND OF Polymorph)
--  R 290 Hannya Pact : 3070
--  R 291 Greater Hannya Pact : 1432
-
 EFFECT 29:
 
 -  C 1324 Charm Animal : 999
 -  C 1354 Charm : 999
 -  C 1409 Hellbind Heart : 999
-EFFECT 127: (CREATES FOUL GUYS)
--  R 320 Infernal Breeding : 1
-
-EFFECT 50: (SUMMON ASSASSIN)
--  R 449 Send Aatxe : 3629
--  R 1067 Earth Attack : 3741
--  R 1422 Infernal Disease : 1662
-
-EFFECT 119:
--  R 326 Send Vodyanoy : 1953
-
 EFFECT 63:
 -  R 901 Wizard's Tower : 24
 -  R 1059 Living Castle : 9
@@ -1467,12 +1808,6 @@ EFFECT 25:
 
 -  C 345 Strange Fire : 1006
 -  C 448 Holy Pyre : 1005
-
-EFFECT 89: (UNIQUE SUMMON!)
--  R 1430 Father Illearth : 5
--  R 1438 Bind Heliophagus : 3
--  R 1450 Bind Demon Lord : 10
-
 EFFECT 73:
 
 -  C 453 Iron Darts : 13
@@ -1481,15 +1816,11 @@ EFFECT 19:
 -  R 490 Mirror Walk : 1
 -  R 1303 Teleport : 1
 
-EFFECT 141:
--  R 537 Call the Birds of Splendor : 3382
 
 EFFECT 501:
 -  R 1061 Lore of Legends : 1086
 -  C 547 Scorching Wind : 250
 
-EFFECT 116:
--  R 607 Unleash Imprisoned Ones : 1
 
 EFFECT 125:
 -  R 628 Mind Vessel : 100
@@ -1568,10 +1899,7 @@ EFFECT 67:
 EFFECT 162:
 
 -  C 784 Mirror Image : 2000
-EFFECT 166:
 
--  C 799 Animate Tree : 361
--  C 918 Awaken Forest : 361
 EFFECT 609:
 
 -  C 809 Encase in Ice : 299
@@ -1592,10 +1920,6 @@ EFFECT 84:
 -  R 1255 Dome of Seven Seals : 132
 -  R 1345 Forgotten Palace : 111
 
-EFFECT 54: (NOTE: polymorph to arg!)
-
--  C 887 Curse of the Frog Prince : 2222
--  C 906 Polymorph : 549
 EFFECT 70:
 -  R 902 Crumble : -25175
 
@@ -1608,20 +1932,6 @@ EFFECT 133:
 EFFECT 34:
 -  R 915 Wish : 0
 
-EFFECT 68: (NOTE: animal summon!)
--  R 921 Summon Animals : 403
--  R 1055 Animal Horde : 403
-
-EFFECT 43: (NOTE: edge battlefield summon)
-
--  C 970 School of Sharks : 815
--  C 991 Will o' the Wisp : 527
--  C 1010 Corpse Candle : 528
-EFFECT 126: (NOTE non-controlled battlefield summon)
-
--  C 977 Summon Lammashtas : 393
--  C 1407 Call Lesser Horror : -6
--  C 1426 Call Horror : -7
 EFFECT 49:
 -  R 996 Wind Ride : 100
 
@@ -1732,10 +2042,6 @@ EFFECT 157:
 
 EFFECT 163:
 -  R 1373 Nexus Gate : 1
-
-EFFECT 35:
--  R 1400 Cross Breeding : 1
--  R 1445 Improved Cross Breeding : 1
 
 EFFECT 118:
 -  R 1401 Blood Feast : 50
@@ -1851,7 +2157,7 @@ EFFECT 102:
 
 
 // spells that are "next" multiple times:
-// (only 1 is a summon)
+// (only 1 is a summon, that one is bugged or smoething?)
 
 Minor Area Shock 1 2
 Thunder Shock 5 2
@@ -1859,7 +2165,7 @@ Area Feeble Mind 24 2
 Minor Paralysis 42 2
 Entangle 47 2
 age ten years 85 2
-6 Maenads 87 2
+6 Maenads 87 2 // this one
 Area Fire 107 3
 Minor Blunt Damage 120 2
 */

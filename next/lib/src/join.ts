@@ -1,21 +1,21 @@
 import type { Table } from './table';
 
-const JOIN_PART = /^\s*(\w+)\s*\[\s*(\w+)\s*\]\s*$/
+const JOIN_PART = /^\s*(\w+)\s*\[\s*(\w+)\s*\]\s*(?:=\s*(\w+)\s*)?$/
 
 export function stringToJoin (
   s: string,
   table?: Table,
   tableMap?: Record<string, Table>
-): [string, string][] {
+): [string, string, string?][] {
   const parts = s.split('+');
   if (parts.length < 2) throw new Error(`bad join "${s}": not enough joins`);
-  const joins: [string, string][] = [];
+  const joins: [string, string, string?][] = [];
   for (const p of parts) {
-    const [_, tableName, columnName] = p.match(JOIN_PART) ?? [];
+    const [_, tableName, columnName, propName] = p.match(JOIN_PART) ?? [];
     if (!tableName || !columnName)
-      throw new Error(`bad join "${s}": "${p}" does not match "TABLE[COL]"`);
+      throw new Error(`bad join "${s}": "${p}" does not match "TABLE[COL]=PROP"`);
 
-    joins.push([tableName, columnName]);
+    joins.push([tableName, columnName, propName]);
   }
   if (tableMap) for (const j of joins) validateJoin(j, table!, tableMap);
   return joins;
@@ -23,12 +23,12 @@ export function stringToJoin (
 
 
 export function validateJoin (
-  join: [string, string],
+  join: [string, string, string?],
   table: Table,
   tableMap: Record<string, Table>
 ) {
-  const [tableName, columnName] = join;
-  const s = `${tableName}[${columnName}]`
+  const [tableName, columnName, propName] = join;
+  const s = `${tableName}[${columnName}]${propName ? '=' + propName : ''}`
   const col = table.schema.columnsByName[columnName];
   if (!col)
     throw new Error(`bad join "${s}": "${table.name}" has no "${columnName}"`);
@@ -55,30 +55,34 @@ export function validateJoin (
         jCol.label
       })`
     );
+
+  if (propName && jTable.schema.columnsByName[propName]) {
+    throw new Error(`bad join "${s}": "${propName}" is already used!`);
+  }
 }
 
-export function joinToString (joins: [string, string][]) {
-  return joins.map(([t, c]) => `${t}[${c}]`).join(' + ')
+export function joinToString (joins: [string, string, string?][]) {
+  return joins.map(([t, c, p]) => `${t}[${c}]` + (p ? `=${p}` : '')).join(' + ');
 }
 
-const JOINED_PART = /^(\w+)\.(\w+)$/;
+const JOINED_PART = /^(\w+)\.(\w+)=(\w+)$/;
 
 export function stringToJoinedBy (
   s: string,
-): [string, string][] {
+): [string, string, string][] {
   const parts = s.split(',');
   if (parts.length < 1) throw new Error(`bad joinedBy doesnt exist?`);
-  const joinedBy: [string, string][] = [];
+  const joinedBy: [string, string, string][] = [];
   for (const p of parts) {
-    const [_, tableName, columnName] = p.match(JOINED_PART) ?? [];
-    if (!tableName || !columnName)
-      throw new Error(`bad join "${s}": "${p}" does not match "TABLE.COL"`);
+    const [_, tableName, columnName, propName] = p.match(JOINED_PART) ?? [];
+    if (!tableName || !columnName || !propName)
+      throw new Error(`bad join "${s}": "${p}" does not match "TABLE.COL=PROP"`);
 
-    joinedBy.push([tableName, columnName]);
+    joinedBy.push([tableName, columnName, propName]);
   }
   return joinedBy;
 }
 
-export function joinedByToString (joins: [string, string][]) {
-  return joins.map(([t, c]) => `${t}.${c}`).join(',')
+export function joinedByToString (joins: [string, string, string][]) {
+  return joins.map(([t, c, p]) => `${t}.${c}=${p}`).join(',');
 }

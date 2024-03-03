@@ -32,8 +32,8 @@ export class Schema {
   readonly name: string;
   readonly columns: Readonly<Column[]>;
   readonly fields: Readonly<string[]>;
-  readonly joins?: [string, string][];
-  readonly joinedBy: [string, string][] = [];
+  readonly joins?: [string, string, string][];
+  readonly joinedBy: [string, string, string][] = [];
   readonly key: string;
   readonly columnsByName: Record<string, Column>;
   readonly fixedWidth: number; // total bytes used by numbers + flags
@@ -52,7 +52,8 @@ export class Schema {
       Math.ceil(flagsUsed / 8), // 8 flags per byte, natch
     );
 
-    if (joins) this.joins = stringToJoin(joins);
+    if (joins) this.joins = stringToJoin(joins)
+      .map(([t, c, p]) => [t, c, p ?? t]);
     if (joinedBy) this.joinedBy.push(...stringToJoinedBy(joinedBy));
 
     let o: number|null = 0;

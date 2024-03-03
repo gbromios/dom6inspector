@@ -5,21 +5,14 @@
   item;
   let pinExtend: boolean = false;
   let hoverExtend: boolean = false;
-  $: showExtend = pinExtend || hoverExtend;
+  //$: showExtend = pinExtend || hoverExtend;
   function toggleHover (h: boolean) { hoverExtend = h; }
   function togglePin (p: boolean) { pinExtend = p; }
 
-  const SRC_TYPE_ICON: Record<any, any> = {
-    0: { name: 'rpcost', title: 'Unit' },
-    1: { name: 'rpcostCommander', title: 'Commander' },
-    2: { name: 'pretender', title: 'WAT' },
-    3: { name: 'pretender', title: 'Pretender' },
-  }
-  const mainIcon = SRC_TYPE_ICON[value.type] as any ?? (
-    (value.type & 8) ?
-      { name: 'heroicability', title: 'Hero' } :
-      { name: 'mindless', title: 'idfk' }
-  );
+  const mainIcon = (value.type & 2) ? { name: 'pretender', title: 'Pretender' } :
+    (value.type & 8) ? { name: 'heroicability', title: 'Hero' } :
+    (value.type & 1) ? { name: 'rpcostCommander', title: 'Commander' } :
+    null;
 
 </script>
 
@@ -29,7 +22,9 @@
   on:click={function () { togglePin(!pinExtend); } }
 >
   <span class="unit-source">
-    <ImgIcon {...mainIcon} />
+    {#if mainIcon}
+      <ImgIcon {...mainIcon} />
+    {/if}
   </span>
 </div>
 
@@ -61,6 +56,10 @@
       margin: 0 -1px;
       height: 24px;
       width: 24px;
+    }
+    & :global(.img-icon[data-name="heroicability"]) {
+      position: relative;
+      top: 2px;
     }
     & :global(.img-icon[data-name="rpcost"]) {
       margin: 0px; height: 20px; width: 20px;

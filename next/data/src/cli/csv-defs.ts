@@ -619,48 +619,47 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
   },
   '../../gamedata/attributes_by_armor.csv': {
     name: 'AttributeByArmor',
-    key: '__rowId', // TODO - need multi-index
+    key: '__rowId',
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/attributes_by_nation.csv': {
     name: 'AttributeByNation',
-    key: '__rowId', // TODO - need multi-index
+    key: '__rowId',
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/attributes_by_spell.csv': {
     name: 'AttributeBySpell',
-    key: '__rowId', // TODO - need multi-index
+    key: '__rowId',
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/attributes_by_weapon.csv': {
     name: 'AttributeByWeapon',
-    key: '__rowId', // TODO - need multi-index
+    key: '__rowId',
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/buffs_1_types.csv': {
-    // TODO - got some big bois in here.
     name: 'BuffBit1',
-    key: '__rowId', // TODO - need multi-index
+    key: '__rowId',
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/buffs_2_types.csv': {
     name: 'BuffBit2',
-    key: '__rowId', // TODO - need multi-index
+    key: '__rowId',
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/coast_leader_types_by_nation.csv': {
     name: 'CoastLeaderTypeByNation',
-    key: '__rowId', // TODO - need multi-index
+    key: '__rowId', // removed after joinTables
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/coast_troop_types_by_nation.csv': {
     name: 'CoastTroopTypeByNation',
-    key: '__rowId', // TODO - need multi-index
+    key: '__rowId', // removed after joinTables
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/effect_modifier_bits.csv': {
     name: 'SpellBit',
-    key: '__rowId', // TODO - need multi-index
+    key: '__rowId', // TODO - need to join
     ignoreFields: new Set(['test']),
   },
   '../../gamedata/effects_info.csv': {
@@ -692,33 +691,39 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
   },
   '../../gamedata/fort_leader_types_by_nation.csv': {
     name: 'FortLeaderTypeByNation',
-    key: '__rowId', // TODO - buh
+    key: '__rowId', // removed after joinTables
     ignoreFields: new Set(['end']),
   },
   '../../gamedata/fort_troop_types_by_nation.csv': {
     name: 'FortTroopTypeByNation',
-    key: '__rowId', // TODO - buh
+    key: '__rowId', // removed after joinTables
     ignoreFields: new Set(['end']),
   },
+  /* TODO turn to constants
   '../../gamedata/magic_paths.csv': {
-    key: 'number', // TODO - buh
+    key: 'number',
     name: 'MagicPath',
     ignoreFields: new Set(['test']),
   },
+  */
   '../../gamedata/map_terrain_types.csv': {
-    key: 'bit_value', // TODO - buh
+    key: 'bit_value', // removed after joinTables
     name: 'TerrainTypeBit',
     ignoreFields: new Set(['test']),
   },
+  /* TODO - turn to constant
   '../../gamedata/monster_tags.csv': {
-    key: 'number', // TODO - buh
+    key: 'number',
     name: 'MonsterTag',
     ignoreFields: new Set(['test']),
   },
+  */
+ /* TODO - turn to constant
   '../../gamedata/nametypes.csv': {
     key: 'id',
     name: 'NameType',
   },
+  */
   '../../gamedata/nations.csv': {
     key: 'id',
     name: 'Nation',
@@ -776,11 +781,13 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
     name: 'SpecialDamageType',
     ignoreFields: new Set(['test']),
   },
+  /*
   '../../gamedata/special_unique_summons.csv': {
     name: 'SpecialUniqueSummon',
     key: 'number',
     ignoreFields: new Set(['test']),
   },
+  */
   '../../gamedata/spells.csv': {
     name: 'Spell',
     key: 'id',
@@ -818,6 +825,7 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
       }
     }
   },
+  /*
   '../../gamedata/terrain_specific_summons.csv': {
     name: 'TerrainSpecificSummon',
     key: 'number',
@@ -828,6 +836,8 @@ export const csvDefs: Record<string, Partial<ParseSchemaOptions>> = {
     key: 'number',
     ignoreFields: new Set(['test']),
   },
+  */
+  // removed after joinTables
   '../../gamedata/unpretender_types_by_nation.csv': {
     key: '__rowId',
     name: 'UnpretenderTypeByNation',
