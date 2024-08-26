@@ -1,3 +1,4 @@
+
 import {
   BoolColumn,
   COLUMN,
@@ -5,6 +6,8 @@ import {
   Schema,
   Table
 } from 'dom6inspector-next-lib';
+
+import * as MISC from './misc-defs';
 
 type TR = Record<string, Table>;
 export function joinDumped (tableList: Table[]) {
@@ -37,21 +40,13 @@ export function joinDumped (tableList: Table[]) {
     Table.removeTable(t, tableList);
   }
 
-  // just seeing where we're at...
-  let us = 0;
-  let ut = 0;
-  for (const unit of tables.Unit.rows) {
-    ut++;
-    if (unit.source) us++;
-    //if (!unit.source) console.log(`${unit.id}:${unit.name} has no sources`);
-  }
-  console.log(`${us} / ${ut} units have sources`)
-  console.log('Unit joined by?', tables.Unit.schema.joinedBy)
 }
 
 function dumpRealms ({ Realm, Unit }: TR) {
   // seems like the realm csv is redundant?
   console.log('REALM STATS:')
+  console.log(Realm.rows);
+  /*
   const combined = new Map<number, number>();
 
   for (const u of Unit.rows) if (u.realm1) combined.set(u.id, u.realm1);
@@ -64,6 +59,7 @@ function dumpRealms ({ Realm, Unit }: TR) {
       console.log(`${monster_number} REALM CONFLICT! unit.csv = ${combined.get(monster_number)}, realm.csv=${realm}`);
     }
   }
+  */
 }
 
 
@@ -570,6 +566,10 @@ export const enum MON_SUMMON {
   TEMPLE_TRAINER = 6, // via #templetrainer, value is hard coded to 1859...
   WINTER = 7, // not a command, used once by vampire queen
   MOUNT = 8, // not really a summon but effectively similar
+  // TODO - shape changing as well
+  SHRINKS_TO = 9,
+  GROWS_TO = 10,
+
 }
 
 function D_SUMMON (t: MON_SUMMON, s: number): string {
@@ -594,6 +594,9 @@ function D_SUMMON (t: MON_SUMMON, s: number): string {
     }
     case MON_SUMMON.TEMPLE_TRAINER: return `#templetrainer`;
     case MON_SUMMON.WINTER: return `(1d3 at the start of winter)`;
+    case MON_SUMMON.MOUNT: return `(rides)`;
+    case MON_SUMMON.GROWS_TO: return `(grows to)`;
+    case MON_SUMMON.SHRINKS_TO: return `(shrinks to)`;
     default: return `IDK??? t=${t}; s=${s}`
   }
 }
@@ -670,7 +673,7 @@ function makeUnitByUnitSummon (tables: TR) {
         asTag: false,
         unitId: target,
       };
-      printRow(r.summonerId, r.unitId, r.summonType, r.summonStrength)
+      //printRow(r.summonerId, r.unitId, r.summonType, r.summonStrength)
       rows.push(r);
     } else if (target < 0) {
       console.log('  MONTAG ' + target + ' [');
@@ -684,7 +687,7 @@ function makeUnitByUnitSummon (tables: TR) {
           asTag: true,
           unitId,
         }
-        printRow(r.summonerId, r.unitId, r.summonType, r.summonStrength, '     >');
+        //printRow(r.summonerId, r.unitId, r.summonType, r.summonStrength, '     >');
         rows.push(r);
       }
       console.log('  ]\n');
@@ -738,6 +741,14 @@ function makeUnitByUnitSummon (tables: TR) {
     if (summoner.mountmnr) {
       // TODO - smart mounts might be commanders? idr
       addRow(MON_SUMMON.MOUNT, 1, summoner.id, summoner.mountmnr);
+    }
+
+    if (summoner.growhp) {
+      addRow(MON_SUMMON.GROWS_TO, 1, summoner.id, summoner.id - 1);
+    }
+
+    if (summoner.shrinkhp) {
+      addRow(MON_SUMMON.SHRINKS_TO, 1, summoner.id, summoner.id + 1);
     }
   }
 
@@ -1049,7 +1060,9 @@ function makePretenderByNation (tables: TR, rows: any[]) {
   }
 
   // make a map first, we will convert to rows at the end
-  const pretenders = new Map(Nation.rows.map(r => [r.id, new Set<number>()]));
+  const pretenders = new Map<number, Set<number>>(
+    Nation.rows.map((r: any) => [r.id as number, new Set<number>()])
+  );
   // monsters for each realm
   const r2m = new Map<number, Set<number>>();
   for (let i = 1; i <= 10; i++) r2m.set(i, new Set());
@@ -1105,6 +1118,18 @@ const enum MISC_UNIT_SRC {
   REANIM = 1,
   INDIE = 2,
   DEBUG = 3, // debug sensei/kohai
+  // ea mus needs some work, looks like at some point neifel/muspel giants were
+  // sharing the same unit ids and they got split
+  TODO_MYPALHEIM = 4,
+  ALT_SHAPE = 5,
+  ADVENTURER = 6,
+  WIGHT = 7,
+  LICH = 8,
+  UNDEAD = 9,
+  MYSTERY_PRETENDER = 10, // probably just have some messed up data?
+  NO_IDEA = 11, // i dunno, gotta figure em out still
+  PROBABLY_ANIMALS = 12, // i dunno, gotta figure em out still
+  HORRORS = 13, // just gotta put em in the montag i think
 }
 // TODO:
 // longdead/soulless/reanimated/etc (incl. montags?)
@@ -1112,6 +1137,48 @@ const enum MISC_UNIT_SRC {
 // look for water/land/forest/plain shapes, add to the relevant area
 // INDIES
 // events?
+
+const SHAPE_KEYS = [
+  'shapechange',
+  'prophetshape',
+  'firstshape',
+  'secondshape',
+  'secondtmpshape',
+  'forestshape',
+  'plainshape',
+  'foreignshape',
+  'homeshape',
+  'domshape',
+  'notdomshape',
+  'springshape',
+  'summershape',
+  'autumnshape',
+  'wintershape',
+  'xpshapemon',
+  'transformation',
+  'landshape',
+  'watershape',
+  'batlleshape',
+  'worldshape',
+]
+
+const NATURE_NAMED = /Tree|Fungus|Boulder|Flower|Shroom|Bush|Shrub/
+const TRUE_MISC = new Set([
+  'Seaweed',
+  'Crystal',
+  'Stalagmite',
+  'Bookshelf',
+  'Counter',
+  'Table',
+  'Barrel',
+  'Crate',
+  'Cactus',
+  'Large Stone',
+  'Peasant',
+  'Commoner',
+  'Blood Slave'
+])
+
 function makeMiscUnit(tables: TR) {
   const {
     Unit,
@@ -1120,19 +1187,195 @@ function makeMiscUnit(tables: TR) {
     UnitBySummoner,
     UnitBySite,
   } = tables;
+  const miscRows: any[] = [];
+  const wightShapes = new Map<number, number[]>();
+  const lichShapes = new Map<number, number[]>();
   const sources = new Map<number, { unit: any, src: any[] }>(
-    Unit.rows.map(unit => [unit.id, { unit, src: [] }])
+    Unit.rows.map((unit: any) => {
+      if (unit.lich) {
+        if (lichShapes.has(unit.lich)) lichShapes.get(unit.lich)!.push(unit.id);
+        else lichShapes.set(unit.lich, [unit.id]);
+      }
+      if (unit.twiceborn) {
+        if (wightShapes.has(unit.twiceborn)) wightShapes.get(unit.twiceborn)!.push(unit.id);
+        else wightShapes.set(unit.twiceborn, [unit.id]);
+      }
+      return [unit.id, { unit, src: [] }];
+    })
   );
 
   for (const r of UnitByNation.rows) sources.get(r.unitId)!.src.push(r);
   for (const r of UnitBySpell.rows) sources.get(r.unitId)!.src.push(r);
   for (const r of UnitBySummoner.rows) sources.get(r.unitId)!.src.push(r);
   for (const r of UnitBySite.rows) sources.get(r.unitId)!.src.push(r);
+  let res = 0;
+  let change = 0;
+  do {
+    res = change;
+    console.log('const UNITS = new Set([')
+    change = findMiscUnit(tables, miscRows, sources);
+    console.log(']);')
+  } while (0);
+  //} while (res !== change);
+}
 
+function findMiscUnit (tables: TR, miscRows: any[], sources: any): number {
+  const { Unit } = tables;
+  // just seeing where we're at...
+  let us = 0;
+  let ut = 0;
+  //console.log('Unit joined by?', tables.Unit.schema.joinedBy)
   for (const { unit, src } of sources.values()) {
-    if (src.length) continue;
-    console.log(`Unit#${unit.id} : ${unit.name} has no sources`);
+    ut++;
+    if (src.length) { us++; continue; }
+    if (unit.startdom) {
+      miscRows.push({
+        unitId: unit.id,
+        reason: MISC_UNIT_SRC.MYSTERY_PRETENDER,
+      });
+      us++;
+      continue;
+    }
+
+    if (MISC.DEBUGGERS.has(unit.id)) {
+      miscRows.push({
+        unitId: unit.id,
+        reason: MISC_UNIT_SRC.DEBUG,
+      });
+      us++;
+      continue;
+    }
+    if (MISC.UNDEAD.has(unit.id)) {
+      miscRows.push({
+        unitId: unit.id,
+        reason: MISC_UNIT_SRC.UNDEAD,
+      });
+      us++;
+      continue;
+    }
+
+    if (MISC.UNDEAD.has(unit.id)) {
+      miscRows.push({
+        unitId: unit.id,
+        reason: MISC_UNIT_SRC.UNDEAD,
+      });
+      us++;
+      continue;
+    }
+    if (MISC.NO_IDEA.has(unit.id)) {
+      miscRows.push({
+        unitId: unit.id,
+        reason: MISC_UNIT_SRC.NO_IDEA,
+      });
+      us++;
+      continue;
+    }
+
+    if (MISC.INDIES.has(unit.id)) {
+      miscRows.push({
+        unitId: unit.id,
+        reason: MISC_UNIT_SRC.INDIE,
+      });
+      us++;
+      continue;
+    }
+    if (MISC.HORRORS.has(unit.id)) {
+      miscRows.push({
+        unitId: unit.id,
+        reason: MISC_UNIT_SRC.HORRORS,
+      });
+      us++;
+      continue;
+    }
+    if (MISC.ANIMALS.has(unit.id)) {
+      miscRows.push({
+        unitId: unit.id,
+        reason: MISC_UNIT_SRC.PROBABLY_ANIMALS,
+      });
+      us++;
+      continue;
+    }
+  
+
+    if (unit.name.startsWith('Jotun')
+        || unit.name === 'Gygja'
+        || unit.name === 'Godihuskarl'
+      ) {
+      miscRows.push({
+        unitId: unit.id,
+        reason: MISC_UNIT_SRC.TODO_MYPALHEIM,
+      });
+      us++;
+      continue;
+    }
+    if (unit.name === 'Adventurer') {
+      miscRows.push({
+        unitId: unit.id,
+        reason: MISC_UNIT_SRC.ADVENTURER,
+      });
+      us++;
+      continue;
+    }
+
+    // probably too broad but oh well
+    if (NATURE_NAMED.test(unit.name) || TRUE_MISC.has(unit.name)) {
+      miscRows.push({
+        unitId: unit.id,
+        reason: MISC_UNIT_SRC.MISC_MISC,
+      });
+      us++;
+      continue;
+    }
+
+    if (unit.name.toUpperCase().includes('WIGHT')) {
+      //console.log(` ** Unit#${unit.id} : ${unit.name} is a lich`);
+      miscRows.push({
+        unitId: unit.id,
+        reason: MISC_UNIT_SRC.WIGHT,
+      });
+      us++;
+      continue;
+    }
+
+
+    if (unit.name.toUpperCase().includes('LICH')) {
+      //console.log(` ** Unit#${unit.id} : ${unit.name} is a lich`);
+      miscRows.push({
+        unitId: unit.id,
+        reason: MISC_UNIT_SRC.LICH,
+      });
+      us++;
+      continue;
+    }
+
+    let shaped = false;
+    for (const k of SHAPE_KEYS) {
+      if (unit[k]) {
+        const v = unit[k];
+        const prev = sources.get(v);
+        if (!prev) {
+          //console.log(` !! Unit#${unit.id}[${k}] : ${unit.name} -> ${v} ???`);
+          continue;
+        }
+        if (prev.src.length === 0) {
+          //console.log(`  !! Unit#${unit.id}[${k}] : ${unit.name} -> ${v} (${prev.unit.name} - also no src)`);
+          continue;
+        }
+
+        //console.log(` ** Unit#${unit.id}[${k}] : ${unit.name} -> ${v} (${prev.unit.name})`);
+        shaped = true;
+      }
+    }
+    if (shaped) {
+      us++;
+      continue;
+    }
+
+    console.log(`  ${unit.id}, // ${unit.name}`);
   }
+  console.log(`${us} / ${ut} units have sources; ${ut - us} to go`)
+
+  return us;
 }
 
 export enum SPELL_SUMMON {
@@ -1240,6 +1483,11 @@ function makeUnitBySpell (tables: TR) {
               summonStrength
             );
           break;
+        // infernal breeding
+        case 320:
+          for (const uid of summons)
+            addRow(uid, 320, SPELL_SUMMON.PICK_ONE, summonStrength);
+          break;
         // tarts
         case 1080:
           for (const uid of summons)
@@ -1341,13 +1589,24 @@ function makeUnitBySpell (tables: TR) {
         summons = spell.raw_value;
         break;
 
+      // case 127: // infernal breeding (CREATES DEOMON GUYS???) now special
+      case 35:  // cross-breeding (CREATES FOUL GUYS) TODO - more work, use montags?
+        summons = [
+          453, // Foul Spawn
+          454, // Foul Spawn
+          457, // Foul Spawn
+          458, // Foul Spawn
+          461, // Foul Spawn
+          466, // Cockatrice
+          467, // Foul Beast
+          487, // Chimera
+          488, // Ettin
+        ];
+        break;
+
       // TODO revisit these
       case 130: // (A KIND OF Polymorph)
       case 54:  // (NOTE: polymorph to arg!)
-      case 127: // infernal breeding (CREATES DEOMON GUYS???)
-      case 35:  // cross-breeding (CREATES FOUL GUYS)
-        continue;
-
       default:
         continue;
     }
@@ -1485,6 +1744,9 @@ const SPECIAL_SUMMON = {
   [859 ]: [924, 1808],
   // ghost ship armada global spell 1219 effect 81 (global) and damage === 43
   [1219]: [3348, 3349, 3350, 3351, 3352],
+  // infernal breedin
+  [320 ]: [2967, 2968, 2969, 2970, 2971, 2972, 2973, 2974, 3061],
+
 };
 
 // from effect 89, key is damage/raw_argument

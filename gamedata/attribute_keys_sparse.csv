@@ -1,0 +1,53 @@
+number	name	test
+163	Non-Coastal Land Troop
+266	Material Composition: Ferrous
+267	Material Composition: Ferrous
+268	Material Composition: Flammable
+269	Material Composition: Flammable
+404	Cannot be cast by mindless
+405	Only affects creatures with astral magic
+477	Increase province magic scale by 3
+482	Not Effected by Fire Bless
+557	Magic
+579	Gifts from Heaven
+582	Map Move Penalty
+599	Soul Slay
+602	Restricted to Realm
+611	Weapon affected by penetration bonus
+709	Duration 1 month+
+710	Does not affect floating commanders
+711	Site Required
+715	Caster must be flying
+717	Record global enchantment cast location
+718	Requires specific unit ability to cast
+719	Specific unit ability prevents casting
+720	Projectile falls vertically
+721	Sound file played on projectile impact
+726	Override percent of units affected in target province
+730	Only castable in forted province
+734	Curses random commander in caster's province
+736	Cannot be cast on unit with effect
+737	Opens target prompt, can only target a unit of type
+739	Do not anticipate target's movement regardless of flysprite
+740	Change Dominion
+741	Requires sun presence
+742	AInocast
+745	Will not be cast against small numbers of enemies
+746	Requires enchantment
+747	Cost is multiplied by size
+748	Percent to horror mark caster
+753	Anonymous
+762	Turmoil scale
+763	Sloth scale
+764	Cold scale
+765	Death scale
+766	Misfortune
+767	Drain scale
+768	Dispel darkness
+910	Extra poison damage
+923	Lingering cloud area
+935	+2 Att vs shield {Wpn: #flail}
+942	Can only be used when mounted {Wpn: #notdismounted} 
+943	Can only be used when dismounted {Wpn: #dismounted} 
+1700	Underwater summon
+1701	Cold summon
